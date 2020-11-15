@@ -55,7 +55,7 @@ public class Publisher {
 
 						DataInputStream dis = new DataInputStream(nodeSocket.getInputStream());
 						while (dis.available() < 1) {
-
+							Thread.sleep(500);
 						}
 						String received = dis.readUTF();
 						System.out.println("Message received from subscriber:" + received);
@@ -68,4 +68,13 @@ public class Publisher {
 		};
 		publish.start();
 	}
+    
+    public static DBMessage filterMessages(DBMessage dbMessage) {
+		if(dbMessage.getReqType() == RequestType.READ) {
+			return dbMessage;
+		}
+    	return null;
+    	
+    	
+    }
 }
