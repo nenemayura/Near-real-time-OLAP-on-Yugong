@@ -6,11 +6,17 @@ public class Subscriber {
 	
 	public static Socket subToPubSocket;
     static String pubSvrIp = "localhost";
-
+    static int port_listen_to = 5432;
 	
 	public static void main(String args[]) {
-		int port_listen_to = Integer.valueOf(args[0]);
-		System.out.println("Arg received:" + port_listen_to);
+		if(args.length >0 ) {
+			if(args[0]!= null) {
+				pubSvrIp = args[0];
+			}
+			if(args[1] !=null) {
+				port_listen_to = Integer.valueOf(args[1]);
+			}
+		}
 		subscribe(port_listen_to);
 	}
 
@@ -19,20 +25,21 @@ public class Subscriber {
 			public void run() {
 				System.out.println("subscribing to port:" + port_listen_to);
 				DataInputStream disSubFromPub;
-				
 				try {
 					subToPubSocket = new Socket(pubSvrIp, port_listen_to);
-					System.out.println("sub socket created");
 					disSubFromPub = new DataInputStream(subToPubSocket.getInputStream());
-					while (disSubFromPub.available() < 1) {
-
+	
+					System.out.println("sub socket created");
+					while(true) {
+							
+						while (disSubFromPub.available() < 1) {
+							Thread.sleep(500);
+						}
+						String received = disSubFromPub.readUTF();
+						DBMessage messageReceived = new ObjectMapper().readValue(received, DBMessage.class);
+	
+						System.out.println("Message received from node:" + received);
 					}
-					String received = disSubFromPub.readUTF();
-					DBMessage messageReceived = new ObjectMapper().readValue(received, DBMessage.class);
-
-					System.out.println("Message received from node:" + messageReceived);
-					Thread.sleep(7000);
-
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
