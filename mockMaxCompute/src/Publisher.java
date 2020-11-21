@@ -4,6 +4,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 public class Publisher {
     static int pubPort = 5432;
@@ -51,15 +53,22 @@ public class Publisher {
 				while (true) {
 					try {
 						DataOutputStream dos = new DataOutputStream(nodeSocket.getOutputStream());
-						dos.writeUTF("Mesage from publisher");
+						DBMessage messageToPublish = new DBMessage(RequestType.READ, "123", "Sample record");
+						ObjectMapper objMapper = new ObjectMapper();
+
+						dos.writeUTF(objMapper.writeValueAsString(messageToPublish));
+						System.out.println("Mesage from publisher:"+ objMapper.writeValueAsString(messageToPublish));
 
 						DataInputStream dis = new DataInputStream(nodeSocket.getInputStream());
 						while (dis.available() < 1) {
 							Thread.sleep(500);
 						}
 						String received = dis.readUTF();
-						System.out.println("Message received from subscriber:" + received);
+						DBMessage messageReceived = objMapper.readValue(received, DBMessage.class);
+
+						System.out.println("Message received from subscriber:" + messageReceived.toString());
 						Thread.sleep(7000);
+						
 					} catch (Exception e) {
 						System.out.println("Exception in publish thread");
 					}
@@ -74,7 +83,6 @@ public class Publisher {
 			return dbMessage;
 		}
     	return null;
-    	
     	
     }
 }
