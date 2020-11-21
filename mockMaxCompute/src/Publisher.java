@@ -4,26 +4,51 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.LinkedList;
+import java.util.Queue;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 public class Publisher {
-    static int pubPort = 5432;
-    static ServerSocket pubSocket;
+
     static String pubSvrIp = "localhost";
+    static String messageSourceIp = "localhost";
+    static int pubPort = 5432;
+    static int messageSourcePort = 6432;
+    
+    static ServerSocket pubSocket;
+    static ServerSocket pubSourceSocket;
+    
+    static Queue<DBMessage> inputMessages = new LinkedList<DBMessage>();
     
     //method to publish notification whenever DB entry is created
 	public static void main(String args[]) {
-		pubPort = Integer.valueOf(args[0]);
-		publishToClient();
-		
+		if(args.length >0) {
+			if(args[0] != null) {
+				pubSvrIp = args[0];
+			}
+			if(args[1] != null) {
+				pubPort = Integer.valueOf(args[1]);
+			}
+			if(args[2]!= null) {
+				messageSourceIp = args[2];
+			}
+			if(args[3]!= null) {
+				messageSourcePort = Integer.valueOf(args[3]);
+			}
+		}
+		listenSource();
+		publishToClient();		
 	}
-	public Publisher(int senderPort) {
+	public Publisher(int senderPort, int messageSourceConnPort) {
 		this.pubPort = senderPort;
+		this.messageSourcePort = messageSourceConnPort;
 	}
 	public static void publishToClient(){
 		try {
 			pubSocket = new ServerSocket(pubPort);
+			pubSourceSocket = new ServerSocket(messageSourcePort);
 			System.out.println("Started publisher on port:" + pubPort);
 			
 		} catch (IOException e1) {
@@ -52,22 +77,17 @@ public class Publisher {
 				System.out.println("Starting thread to publish messages to every node");
 				while (true) {
 					try {
+        				ObjectMapper objMapper = new ObjectMapper();
+
+        				while (inputMessages.size() < 1) {
+        					Thread.sleep(500);
+        				}
+        				DBMessage messageToPublish = inputMessages.poll();
+						
 						DataOutputStream dos = new DataOutputStream(nodeSocket.getOutputStream());
-						DBMessage messageToPublish = new DBMessage(RequestType.READ, "123", "Sample record");
-						ObjectMapper objMapper = new ObjectMapper();
 
 						dos.writeUTF(objMapper.writeValueAsString(messageToPublish));
-						System.out.println("Mesage from publisher:"+ objMapper.writeValueAsString(messageToPublish));
-
-						DataInputStream dis = new DataInputStream(nodeSocket.getInputStream());
-						while (dis.available() < 1) {
-							Thread.sleep(500);
-						}
-						String received = dis.readUTF();
-						DBMessage messageReceived = objMapper.readValue(received, DBMessage.class);
-
-						System.out.println("Message received from subscriber:" + messageReceived.toString());
-						Thread.sleep(7000);
+						System.out.println("Mesage from publisher to subscriber:"+ objMapper.writeValueAsString(messageToPublish));
 						
 					} catch (Exception e) {
 						System.out.println("Exception in publish thread");
@@ -84,5 +104,47 @@ public class Publisher {
 		}
     	return null;
     	
+    }
+    // collect messages at publisher to a queue and keep sending them to subscriber
+    
+    public static void listenSource() {
+
+    	Thread listen = new Thread() {
+			public void run() {
+		    	Socket pubSourceSocket = null;
+		    	try {
+		    		pubSourceSocket = new Socket(messageSourceIp, messageSourcePort);
+		    		System.out.println("Started listeining to message source:" + messageSourcePort);
+		    		
+		    	} catch (IOException e1) {
+		    		e1.printStackTrace();
+		    	}
+		    	//TODO check if this while loop is required
+		     while(true) { // loop because publisher needs to keep listening to the source all the time
+		    		DataInputStream dis;
+					try {
+						dis = new DataInputStream(pubSourceSocket.getInputStream());
+
+						while (dis.available() < 1) {
+							Thread.sleep(500);
+						}
+						ObjectMapper objMapper = new ObjectMapper();
+						String received = dis.readUTF();
+						System.out.println("received from source:"+ received);
+						DBMessage inputMessage =  objMapper.readValue(received, DBMessage.class);
+						
+						if(filterMessages(inputMessage) != null) {
+							inputMessages.add(inputMessage);
+						}
+						
+					} catch (IOException e) {
+						e.printStackTrace();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+		    	}
+			}
+			};
+			listen.start();
     }
 }
