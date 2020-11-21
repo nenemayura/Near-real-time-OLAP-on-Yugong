@@ -1,5 +1,6 @@
 import java.io.DataInputStream;
 import java.net.Socket;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Subscriber {
 	
@@ -27,7 +28,9 @@ public class Subscriber {
 
 					}
 					String received = disSubFromPub.readUTF();
-					System.out.println("Message received from node:" + received);
+					DBMessage messageReceived = new ObjectMapper().readValue(received, DBMessage.class);
+
+					System.out.println("Message received from node:" + messageReceived);
 					Thread.sleep(7000);
 
 				} catch (Exception e) {
@@ -37,5 +40,4 @@ public class Subscriber {
 		};
 		listen.start();
 	}
-
 }
