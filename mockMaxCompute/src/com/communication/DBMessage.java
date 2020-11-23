@@ -1,3 +1,5 @@
+package com.communication;
+
 
 public class DBMessage {
 	
@@ -5,15 +7,19 @@ public class DBMessage {
 	private String recordId;
 	private String record;
 	
-	//TODO do we need time stamp here?
-	public DBMessage(RequestType reqType, String recordId, String record) {
-		this.recordId = recordId;
-		this.record = record;
-		this.reqType = reqType;
-	}
-	public DBMessage() {
+
+	public DBMessage() {}
 	
+	
+	
+	public DBMessage(RequestType read, String recordID, String record) {
+		this.reqType = read;
+		this.recordId = recordID;
+		this.record = record;
 	}
+
+
+
 	public RequestType getReqType() {
 		return reqType;
 	}

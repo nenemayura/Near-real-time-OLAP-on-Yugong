@@ -1,3 +1,4 @@
+package com.communication;
 
 public enum RequestType {
 	INSERT,

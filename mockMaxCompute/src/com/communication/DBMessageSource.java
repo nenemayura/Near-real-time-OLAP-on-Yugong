@@ -1,3 +1,4 @@
+package com.communication;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -39,29 +40,29 @@ public class DBMessageSource {
 					e1.printStackTrace();
 				}
 				System.out.println("Starting thread at message source to send messages to publisher");
-				while (true) {
+				//while (true) {
 					try {
         				ObjectMapper objMapper = new ObjectMapper();
 						DataOutputStream dos = new DataOutputStream(publisherSocket.getOutputStream());
 
         				
-        				DBMessage message = new DBMessage(RequestType.READ, "123", "Sample record");
-						dos.writeUTF(objMapper.writeValueAsString(message));
-						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
+//        				DBMessage message = new DBMessage(RequestType.READ, "1", "");
+//						dos.writeUTF(objMapper.writeValueAsString(message));
+//						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
 						
-        		        message = new DBMessage(RequestType.EDIT, "123", "Sample record");
+						DBMessage message = new DBMessage(RequestType.INSERT, "1", " \"Roopana \" , 35 ");
 						dos.writeUTF(objMapper.writeValueAsString(message));
 						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
-						
-        		        message = new DBMessage(RequestType.READ, "134", "Sample record");
-						dos.writeUTF(objMapper.writeValueAsString(message));
-						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
+//						
+//        		        DBMessage message = new DBMessage(RequestType.READ, "134", "Sample record");
+//						dos.writeUTF(objMapper.writeValueAsString(message));
+//						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
 						
 					} catch (Exception e) {
 						System.out.println("Exception in message source thread");
 						//TODO close socket connection
 					}
-				}
+				//}
 			}
 		};
 		send.start();

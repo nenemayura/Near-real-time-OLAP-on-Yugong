@@ -1,3 +1,4 @@
+package com.communication;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -75,9 +76,16 @@ public class Publisher {
 		Thread publish = new Thread() {
 			public void run() {
 				System.out.println("Starting thread to publish messages to every node");
+				
 				while (true) {
 					try {
         				ObjectMapper objMapper = new ObjectMapper();
+        				DataInputStream dis = new DataInputStream(nodeSocket.getInputStream());
+        				System.out.println("Input msg size is "+inputMessages.size());
+//        				if(dis.available() > 0) {
+//							final String result  = dis.readUTF();
+//							System.out.println("Result received from subscriber "+result);
+//						}
 
         				while (inputMessages.size() < 1) {
         					Thread.sleep(500);
@@ -88,6 +96,13 @@ public class Publisher {
 
 						dos.writeUTF(objMapper.writeValueAsString(messageToPublish));
 						System.out.println("Mesage from publisher to subscriber:"+ objMapper.writeValueAsString(messageToPublish));
+						
+						// TODO: check how much delay should be added. It is required to read data from socket else it keeps waiting in input msg queue 
+						// while loop
+						
+						//Thread.sleep(5000);
+						System.out.println("Thread woke up after 5 sec delay");
+						
 						
 					} catch (Exception e) {
 						System.out.println("Exception in publish thread");
@@ -133,9 +148,9 @@ public class Publisher {
 						System.out.println("received from source:"+ received);
 						DBMessage inputMessage =  objMapper.readValue(received, DBMessage.class);
 						
-						if(filterMessages(inputMessage) != null) {
+						//if(filterMessages(inputMessage) != null) {
 							inputMessages.add(inputMessage);
-						}
+						//}
 						
 					} catch (IOException e) {
 						e.printStackTrace();
