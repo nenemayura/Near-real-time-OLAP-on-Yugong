@@ -1,0 +1,5 @@
+SELECT * FROM sample;.
+SELECT * FROM test WHERE a=b;..
+INSERT blah, blah, blah INTO sample;.
+DELETE blah FROM sample WHERE g=h;..
+DROP TABLE Blah;...
