@@ -4,6 +4,8 @@ public enum RequestType {
 	INSERT,
 	EDIT,
 	DELETE,
-	READ
-
+	READ,
+	ACK_INSERT,
+	ACK_EDIT,
+	ACK_DELETE
 }
