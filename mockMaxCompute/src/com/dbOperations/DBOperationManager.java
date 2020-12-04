@@ -4,11 +4,13 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.communication.DBMessage;
 import com.communication.RequestType;
-
-import replication.test.DatabaseConnection;
+import com.replication.DatabaseConnection;
+import com.stateTable.StateTableOperationManager;
 
 
 public class DBOperationManager {
@@ -19,10 +21,18 @@ public class DBOperationManager {
 	}
 	
 	public String processMessageRequest(final DBMessage messageReceived) {
-	
+		List<Integer> nodes = new ArrayList();
+		nodes.add(3);
+		nodes.add(2);
+		nodes.add(5);
 		// switch case 
 		final String result =  processRequestType(messageReceived);
-		
+//		final String result = "done";
+//		StateTableOperationManager stateObj = new StateTableOperationManager(localDbConnection);
+//		stateObj.insertIntoStateTable("15", "mayura", nodes);
+//		stateObj.updateStateTable("1", "roops", nodes);
+//		String readRes = stateObj.readFromStateTable("2", "shravya");
+//		System.out.println("Result of read is "+readRes);
 		return result;
 	}
 	

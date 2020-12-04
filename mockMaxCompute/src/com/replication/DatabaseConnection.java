@@ -1,5 +1,5 @@
 
-package replication.test;
+package com.replication;
 
 /**
  * @author nenem
@@ -19,7 +19,7 @@ public class DatabaseConnection {
   
     static
     { 
-        String url = "jdbc:mysql://localhost:3306/testdatabase?characterEncoding=latin1"; 
+        String url = "jdbc:mysql://localhost:3306/tpch?characterEncoding=latin1"; 
 
 		System.out.println("Connecting database...");
 

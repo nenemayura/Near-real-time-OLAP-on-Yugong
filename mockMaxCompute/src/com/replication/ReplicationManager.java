@@ -1,7 +1,7 @@
 /**
  * 
  */
-package replication.test;
+package com.replication;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
