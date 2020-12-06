@@ -49,11 +49,24 @@ public class DBMessageSource {
 //        				DBMessage message = new DBMessage(RequestType.READ, "1", "");
 //						dos.writeUTF(objMapper.writeValueAsString(message));
 //						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
-						
-						DBMessage message = new DBMessage(RequestType.INSERT, "1", " \"Roopana \" , 35 ");
-						dos.writeUTF(objMapper.writeValueAsString(message));
-						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
-//						
+						try (BufferedReader br = new BufferedReader(new FileReader("tpch-stream.sql"))) {
+							String line;
+							while ((line = br.readLine()) != null) {
+								// process the line
+								scanner = new Scanner(line);
+								scanner.useDelimiter(";");
+								while (scanner.hasNext()) {
+									String data = scanner.next();
+									message = data;
+									System.out.println("Query read was : " + data);
+
+								}
+							}
+						}
+//						DBMessage message = new DBMessage(RequestType.INSERT, "1", " \"Roopana \" , 35 ");
+//						dos.writeUTF(objMapper.writeValueAsString(message));
+//						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
+//
 //        		        DBMessage message = new DBMessage(RequestType.READ, "134", "Sample record");
 //						dos.writeUTF(objMapper.writeValueAsString(message));
 //						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
