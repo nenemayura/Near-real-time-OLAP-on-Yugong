@@ -1,4 +1,3 @@
-package com.communication;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -40,29 +39,39 @@ public class DBMessageSource {
 					e1.printStackTrace();
 				}
 				System.out.println("Starting thread at message source to send messages to publisher");
-				//while (true) {
+				int count = 0;
+				while (true) {
 					try {
         				ObjectMapper objMapper = new ObjectMapper();
 						DataOutputStream dos = new DataOutputStream(publisherSocket.getOutputStream());
-
         				
-//        				DBMessage message = new DBMessage(RequestType.READ, "1", "");
-//						dos.writeUTF(objMapper.writeValueAsString(message));
-//						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
-						
-						DBMessage message = new DBMessage(RequestType.INSERT, "1", " \"Roopana \" , 35 ");
+        				DBMessage message = new DBMessage(RequestType.INSERT, "123", "Sample record");
 						dos.writeUTF(objMapper.writeValueAsString(message));
-						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
-//						
-//        		        DBMessage message = new DBMessage(RequestType.READ, "134", "Sample record");
-//						dos.writeUTF(objMapper.writeValueAsString(message));
 //						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
 						
+//        		        message = new DBMessage(RequestType.EDIT, "123", "Sample record");
+//						dos.writeUTF(objMapper.writeValueAsString(message));
+////						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
+//						
+//        		        message = new DBMessage(RequestType.INSERT, "134", "Sample record");
+//						dos.writeUTF(objMapper.writeValueAsString(message));
+////						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
+//						
+						count++;
+						if(count%100 ==0) {
+							Thread.sleep(5000);
+						}
 					} catch (Exception e) {
-						System.out.println("Exception in message source thread");
-						//TODO close socket connection
+						System.out.println("Exception in message source thread, closing connection");
+						e.printStackTrace();
+						try {
+							publisherSocket.close();
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
 					}
-				//}
+				
+				}
 			}
 		};
 		send.start();
