@@ -1,13 +1,19 @@
-package com.communication;
-
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -21,11 +27,18 @@ public class Publisher {
 	static int messageSourcePort = 6432;
 
 	static ServerSocket pubSocket;
-	static ServerSocket pubSourceSocket;
+	static Socket pubSourceSocket;
 
-	static Queue<DBMessage> inputMessages = new LinkedList<DBMessage>();
-	public static volatile ConcurrentHashMap<String, Integer> ackMap = new ConcurrentHashMap<String, Integer>(); // no of acknowledgements received for each reqKey
-
+	static volatile Queue<DBMessage>  inputMessages = new LinkedList<DBMessage>();
+	public static volatile ConcurrentHashMap<String, Set<String>> ackMap = new ConcurrentHashMap<String, Set<String>>(); // no
+																															// of
+																															// acknowledgements
+																															// received
+																															// for
+																															// each
+																															// reqKey
+	public static volatile ConcurrentHashMap<String, Set<String>> stateTable = new ConcurrentHashMap<String, Set<String>>();
+	public static ConcurrentHashMap<String, Socket> subscriberNodeSocketMap = new ConcurrentHashMap<String, Socket>();
 
 	// method to publish notification whenever DB entry is created
 	public static void main(String args[]) {
@@ -44,7 +57,9 @@ public class Publisher {
 			}
 		}
 		listenSource();
-		publishToClient();
+		acceptSubscriptions();
+		publish(); //thread to broadcast msgs to subscribers
+
 	}
 
 	public Publisher(int senderPort, int messageSourceConnPort) {
@@ -52,10 +67,9 @@ public class Publisher {
 		this.messageSourcePort = messageSourceConnPort;
 	}
 
-	public static void publishToClient() {
+	public static void acceptSubscriptions() {
 		try {
 			pubSocket = new ServerSocket(pubPort);
-			pubSourceSocket = new ServerSocket(messageSourcePort);
 			System.out.println("Started publisher on port:" + pubPort);
 
 		} catch (IOException e1) {
@@ -67,9 +81,13 @@ public class Publisher {
 					Socket nodeSocket;
 					try {
 						nodeSocket = pubSocket.accept();
+						String nodeKey = nodeSocket.getRemoteSocketAddress().toString();
+						System.out.println("nodeKey:"+ nodeKey);
+					
+						subscriberNodeSocketMap.put(nodeKey, nodeSocket);
 						System.out.println("Accepted connection from subscriber");
-						publish(nodeSocket); // once subscription is accepted publish thread keeps running for all
-												// subscribers
+						
+						listenAck(nodeSocket);
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -77,9 +95,10 @@ public class Publisher {
 			}
 		};
 		acceptSubscriptions.start();
+		
 	}
 
-	public static void publish(Socket nodeSocket) { // add specification to publish to one particular node socket
+	public static void publish() { // publishes/broadcasts to all subscribers
 
 		Thread publish = new Thread() {
 			public void run() {
@@ -92,15 +111,27 @@ public class Publisher {
 							Thread.sleep(500);
 						}
 						DBMessage messageToPublish = inputMessages.poll();
+						
+						Iterator<Map.Entry<String, Socket> > iterator = subscriberNodeSocketMap.entrySet().iterator(); 
+						while (iterator.hasNext()) { 
+				            Entry<String, Socket> entry  = iterator.next(); 
+				            Socket nodeSocket = entry.getValue();
+				            
+				            try {
+								DataOutputStream dos = new DataOutputStream(nodeSocket.getOutputStream());
+								dos.writeUTF(objMapper.writeValueAsString(messageToPublish));
 
-						DataOutputStream dos = new DataOutputStream(nodeSocket.getOutputStream());
-
-						dos.writeUTF(objMapper.writeValueAsString(messageToPublish));
-						System.out.println("Mesage from publisher to subscriber:"
-								+ objMapper.writeValueAsString(messageToPublish));
-
+								}catch (Exception e) {
+									System.out.println("Exception while broadcasting, closing connection");
+									e.printStackTrace();
+									nodeSocket.close();
+									iterator.remove(); 
+								}
+				         }
 					} catch (Exception e) {
 						System.out.println("Exception in publish thread");
+						e.printStackTrace();
+						
 					}
 				}
 			}
@@ -121,7 +152,6 @@ public class Publisher {
 
 		Thread listen = new Thread() {
 			public void run() {
-				Socket pubSourceSocket = null;
 				try {
 					pubSourceSocket = new Socket(messageSourceIp, messageSourcePort);
 					System.out.println("Started listeining to message source:" + messageSourcePort);
@@ -140,44 +170,20 @@ public class Publisher {
 						}
 						ObjectMapper objMapper = new ObjectMapper();
 						String received = dis.readUTF();
-						System.out.println("received from source:" + received);
+
 						DBMessage inputMessage = objMapper.readValue(received, DBMessage.class);
 
-//						if (filterMessages(inputMessage) != null) {
-//							inputMessages.add(inputMessage);
-//						}
 						if (inputMessage.getReqType() == RequestType.INSERT
 								|| inputMessage.getReqType() == RequestType.DELETE
 								|| inputMessage.getReqType() == RequestType.EDIT) {
-							inputMessages.add(inputMessage); // this queue publishes to all nodes => msg is broadcasted to everyone in the network
+							inputMessages.add(inputMessage); // this queue broadcasts msgs to all subscribers in the network
 
 						} else if (inputMessage.getReqType() == RequestType.READ) {
 
-							Socket readTargetNodeSocket = getNodeWithUpdatedState(); // TODO get random node or directly
-																						// send to rep slave?
+							String readTargetNodeId = getNodeWithUpdatedState(inputMessage.getRecordId());
+							Socket readTargetNodeSocket = null; // TODO build scoket for the target nodeid
 							DataOutputStream dos = new DataOutputStream(readTargetNodeSocket.getOutputStream());
 							dos.writeUTF(objMapper.writeValueAsString(inputMessage));
-							
-						} else if (inputMessage.getReqType() == RequestType.ACK_INSERT 
-								|| inputMessage.getReqType() == RequestType.ACK_DELETE
-								|| inputMessage.getReqType() == RequestType.ACK_EDIT) {
-							int Nw = 2; //TODO remove hardcoding
-							String requestKey = inputMessage.getRecordId();
-							synchronized (this) {
-								updateAckMap(requestKey);
-								int nAcks = ackMap.get(requestKey);
-								System.out.println("nAcks:" + nAcks + " nAcksReqd:" + Nw);
-							    if (nAcks >= Nw) {
-							    	/**
-									 * once the request is successful flush the ack entry from map to enable
-									 * processing request on same entry by same client
-									 **/
-									flushKeyFromAckMap(requestKey);
-									//TODO send message to user or DB?
-							    }
-							    
-							}
-
 						}
 
 					} catch (IOException e) {
@@ -190,33 +196,130 @@ public class Publisher {
 		};
 		listen.start();
 	}
+	
+	public static void listenAck(Socket nodeSocket) {
 
-	public static Socket getNodeWithUpdatedState() {
-		// map of Sockets and
-		return null;
+		Thread listenAck = new Thread() {
+			public void run() {
+				
+				while (true) { // loop because publisher needs to keep listening to the source all the time
+					DataInputStream dis;
+					try {
+						dis = new DataInputStream(nodeSocket.getInputStream());
+
+						while (dis.available() < 1) {
+							Thread.sleep(500);
+						}
+						ObjectMapper objMapper = new ObjectMapper();
+						String received = dis.readUTF();
+
+						DBMessage inputMessage = objMapper.readValue(received, DBMessage.class);
+
+						if (inputMessage.getReqType() == RequestType.ACK_INSERT
+								|| inputMessage.getReqType() == RequestType.ACK_DELETE
+								|| inputMessage.getReqType() == RequestType.ACK_EDIT) {
+							int Nw = 2; // TODO remove hardcoding
+							String requestKey = inputMessage.getMessageKey();
+//							System.out.println(Thread.currentThread().getName()+ ": received  message from subscriber node:"+ inputMessage.getSenderId());
+							synchronized (this) {
+								
+								updateAckMap(requestKey, inputMessage.getSenderId());
+								
+								Set<String> senderNodes = ackMap.get(requestKey);
+								
+								int nAcks = senderNodes != null ? senderNodes.size() : 0;
+								
+								if (nAcks >= Nw) {
+									System.out.println("nAcks:" + nAcks + " nAcksReqd:" + Nw);
+
+									/**
+									 * once the request is successful flush the ack entry from map to enable
+									 * processing request on same entry by same client
+									 **/
+									populateStateTable(inputMessage.getRecordId(), ackMap.get(requestKey));
+									
+									flushKeyFromAckMap(requestKey);
+									
+									// TODO send response to user
+								}
+							}
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.out.println("Exception occured, closing connection");
+						try {
+							nodeSocket.close();
+							Thread.currentThread().interrupt();
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+						System.out.println("Exception occured, closing connection");
+						try {
+							nodeSocket.close();
+							Thread.currentThread().interrupt();
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+					}
+				}
+			}
+		};
+		listenAck.start();
+	}
+
+	public static void populateStateTable(String recordId, Set<String> set) {
+		final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+		rwl.writeLock().lock();
+		stateTable.put(recordId, set);
+		rwl.writeLock().unlock();
+		System.out.println("Updated state table with id:" + recordId + "entries:" + set);
+	}
+
+	public static String getNodeWithUpdatedState(String recordId) {
+		if (stateTable.get(recordId) != null) { // if the record is present in state table return any node in the list
+			return stateTable.get(recordId).iterator().next();
+		} else { // if record has not been updated at all
+					// TODO implement logic to look up in local DB and other DCs
+			return null;
+		}
 
 	}
-	private synchronized static void updateAckMap(String ackMapkey) {
+
+	public synchronized static void updateAckMap(String ackMapkey, String nodeId) {
 		final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 		rwl.readLock().lock();
 		if (ackMap.get(ackMapkey) != null) {
 			rwl.readLock().unlock();
 			rwl.writeLock().lock();
-			ackMap.put(ackMapkey, ackMap.get(ackMapkey) + 1);
+			Set<String> ackNodes = ackMap.get(ackMapkey);
+			ackNodes.add(nodeId);
+			ackMap.put(ackMapkey, ackNodes);
 			rwl.writeLock().unlock();
 		} else {
 			rwl.readLock().unlock();
 			rwl.writeLock().lock();
-			ackMap.put(ackMapkey, 1);
+			Set<String> ackNodes = new HashSet<String>();
+			ackNodes.add(nodeId);
+			ackMap.put(ackMapkey, ackNodes);
 			rwl.writeLock().unlock();
 		}
-		System.out.println("updated ackmap," + ackMapkey + ":" + ackMap.get(ackMapkey));
+//		System.out.println("updated ackmap," + ackMapkey + ":" + ackMap.get(ackMapkey));
 	}
-	
-	private synchronized static void flushKeyFromAckMap(String ackMapkey) {
+
+	public synchronized static void flushKeyFromAckMap(String ackMapkey) {
+		final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+		rwl.readLock().lock();
 		if (ackMap.get(ackMapkey) != null) {
+			rwl.readLock().unlock();
+			rwl.writeLock().lock();
 			ackMap.remove(ackMapkey);
+			rwl.writeLock().unlock();
+		}else {
+			rwl.readLock().unlock();
 		}
+		
 		System.out.println("flushed key from ackmap," + ackMapkey);
 	}
 
