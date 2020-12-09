@@ -1,3 +1,4 @@
+package com.communication;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -197,7 +198,7 @@ public class Publisher {
 		listen.start();
 	}
 	
-	public static void listenAck(Socket nodeSocket) {
+	public static void listenAck(final Socket nodeSocket) {
 
 		Thread listenAck = new Thread() {
 			public void run() {
