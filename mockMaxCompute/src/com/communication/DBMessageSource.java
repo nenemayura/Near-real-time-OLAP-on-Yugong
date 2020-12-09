@@ -1,5 +1,7 @@
 package com.communication;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -49,19 +51,55 @@ public class DBMessageSource {
 //        				DBMessage message = new DBMessage(RequestType.READ, "1", "");
 //						dos.writeUTF(objMapper.writeValueAsString(message));
 //						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
-						try (BufferedReader br = new BufferedReader(new FileReader("tpch-stream.sql"))) {
-							String line;
-							while ((line = br.readLine()) != null) {
-								// process the line
-								scanner = new Scanner(line);
-								scanner.useDelimiter(";");
-								while (scanner.hasNext()) {
-									String data = scanner.next();
-									message = data;
-									System.out.println("Query read was : " + data);
+						//Read 10 times and write/update once
 
-								}
+						try{
+							try{
+								Scanner readQueries = new Scanner(new File("tpch-stream.sql")).useDelimiter(";");
 							}
+							try{
+								Scanner updateQueries = new Scanner(new File("update.tbl"));
+							}
+							try{
+								Scanner insertQueries = new Scanner(new File("insert.tbl"))
+							}
+
+							int readOffset = 0;
+
+							while(true){
+
+								while (readQueries.hasNextLine() && readOffset<10) {
+									String readQuery = readQueries.nextLine();
+									System.out.println(readQuery);
+									readOffset++;
+								}
+								if (readOffset==10)
+									readOffset=0;
+								if (!readQueries.hasNextLine())
+									readQueries = new File("tpch-stream.sql");
+								if (updateQueries.hasNextLine()){
+									String updateQuery = updateQueries.nextLine();
+									System.out.println(updateQuery);
+								}
+								else
+									break;
+								if (insertQueries.hasNextLine()){
+									String insertQuery = insertQueries.nextLine();
+									System.out.println(insertQuery);
+								}
+								else
+									break;
+
+							}
+
+							readQueries.close();
+							updateQueries.close();
+							insertQueries.close();
+						}
+						catch (FileNotFoundException e) {
+							System.out.println("An error occurred.");
+							e.printStackTrace();
+						}
 						}
 //						DBMessage message = new DBMessage(RequestType.INSERT, "1", " \"Roopana \" , 35 ");
 //						dos.writeUTF(objMapper.writeValueAsString(message));
