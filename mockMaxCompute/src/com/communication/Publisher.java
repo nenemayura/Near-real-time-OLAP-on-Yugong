@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -16,6 +15,11 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -270,13 +274,42 @@ public class Publisher {
 	}
 
 	public static void populateStateTable(String recordId, Set<String> set) {
+		int maxStateTableSize = 1000;
+		
 		final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+		rwl.readLock().lock();
+		List<String> recordIds = new ArrayList<String>(stateTable.keySet());
+		rwl.readLock().unlock();
+
 		rwl.writeLock().lock();
+		if(recordIds.size()>maxStateTableSize) {
+			stateTable.remove(recordIds.get(0));
+		}
 		stateTable.put(recordId, set);
+		updateDataBase(recordId, set);
+		
 		rwl.writeLock().unlock();
 		System.out.println("Updated state table with id:" + recordId + "entries:" + set);
 	}
 
+	public static void updateDataBase(String recordId, Set<String> set) {
+		Connection localConnection = DatabaseConnection.getConnection();
+		Statement stmt;
+
+		try {
+			stmt = localConnection.createStatement();
+			String tableName = "testtable";
+			String nodes = "";
+			for(String nodeId: set) {
+				nodes = nodes+","+ nodeId;
+			}
+			stmt.executeUpdate("INSERT INTO statetable(id, tablename, nodes) VALUES('"+ recordId+"','"+ tableName+"','" + nodes +"')"
+					+ "ON DUPLICATE KEY UPDATE nodes= '"+ nodes+"'"); 
+
+		} catch (SQLException e) {
+			System.out.println("Error while executing statement "+e);
+		}
+	}
 	public static String getNodeWithUpdatedState(String recordId) {
 		if (stateTable.get(recordId) != null) { // if the record is present in state table return any node in the list
 			return stateTable.get(recordId).iterator().next();
@@ -284,7 +317,6 @@ public class Publisher {
 					// TODO implement logic to look up in local DB and other DCs
 			return null;
 		}
-
 	}
 
 	public synchronized static void updateAckMap(String ackMapkey, String nodeId) {
@@ -319,7 +351,6 @@ public class Publisher {
 		}else {
 			rwl.readLock().unlock();
 		}
-		
 		System.out.println("flushed key from ackmap," + ackMapkey);
 	}
 
