@@ -1,10 +1,10 @@
 package com.communication;
+import com.dbOperations.DBOperationManager;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
-
-import com.dbOperations.DBOperationManager;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Subscriber {
 	
@@ -29,7 +29,7 @@ public class Subscriber {
 		subscriber.subscribe(port_listen_to);
 	}
 
-	public void subscribe(int port_listen_to) {
+	public void subscribe(final int port_listen_to) {
 		Thread listen = new Thread() {
 			public void run() {
 				System.out.println("subscribing to port:" + port_listen_to);

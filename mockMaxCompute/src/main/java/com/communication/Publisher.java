@@ -1,5 +1,6 @@
-package com.communication;
 
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -10,8 +11,6 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Publisher {
 
@@ -79,7 +78,7 @@ public class Publisher {
 		acceptSubscriptions.start();
 	}
 
-	public static void publish(Socket nodeSocket) { // add specification to publish to one particular node socket
+	public static void publish(final Socket nodeSocket) { // add specification to publish to one particular node socket
 
 		Thread publish = new Thread() {
 			public void run() {
