@@ -1,29 +1,35 @@
 package com.communication;
 
-public class QueryProcessing {
+public class Query {
     private RequestType reqType;
     private String message;
+    private TableName tableName;
     private String query;
 
-    public QueryProcessing() {}
 
-
-
-    public QueryProcessing(RequestType reqType, String message ) {
+    public Query(RequestType reqType, String message){
         this.reqType = reqType;
         this.message = message;
-        if (reqType==RequestType.READ){
-            //return the message back as is
-            setQuery(message);
+        if (reqType!=RequestType.READ){
+            throw new IllegalArgumentException("Too few arguments for non-read query");
         }
-        else {
-            //parse and convert to query
-            setQuery(convertToQuery(reqType,message));
+        setQuery(message);
 
+    }
+    public Query(RequestType reqType, String message, TableName tableName ) {
+        this.reqType = reqType;
+        this.message = message;
+        this.tableName=tableName;
+        try{
+            setQuery(convertToQuery(reqType,message,tableName));
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            throw e;
         }
     }
 
-    public static String convertToQuery(RequestType reqType, String values){
+    public String convertToQuery(RequestType reqType, String values, TableName tableName){
         String query=null;
         if (reqType == RequestType.EDIT){
             String[] sepValues = values.split("|");
@@ -31,11 +37,14 @@ public class QueryProcessing {
         }
         else if (reqType == RequestType.INSERT){
             String commaSepValues = values.replace("|",", ");
-            query = "INSERT INTO orders VALUES ("+commaSepValues+");";
+            query = "INSERT INTO " + tableName.name() + " VALUES ("+commaSepValues+");";
 
         }
+        else if (reqType == RequestType.READ){
+            return values;
+        }
         if (query == null){
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Invalid request type for convertToQuery");
         }
         return query;
     }
@@ -46,12 +55,8 @@ public class QueryProcessing {
     public void setReqType(RequestType reqType) {
         this.reqType = reqType;
     }
-    public String getMessage() {
-        return message;
-    }
-    public void setRecordId(String message) {
-        this.message = message;
-    }
+
+
 
     public String getQuery() {
         return query;
@@ -59,6 +64,22 @@ public class QueryProcessing {
 
     public void setQuery(String query) {
         this.query = query;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public TableName getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(TableName tableName) {
+        this.tableName = tableName;
     }
 }
 

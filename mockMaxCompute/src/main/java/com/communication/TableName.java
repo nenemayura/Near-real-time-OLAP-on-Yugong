@@ -1,2 +1,13 @@
-package com.communication;public class TableName {
+package com.communication;
+
+public enum TableName {
+    customer,
+    lineitem,
+    nation,
+    orders,
+    part,
+    partsupp,
+    region,
+    statetable,
+    supplier
 }

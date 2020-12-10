@@ -10,7 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="Near-real-time-OLAP-on-Yugong" target="7" />
+      <module name="Near-real-time-OLAP-on-Yugong" target="8" />
     </bytecodeTargetLevel>
   </component>
 </project>

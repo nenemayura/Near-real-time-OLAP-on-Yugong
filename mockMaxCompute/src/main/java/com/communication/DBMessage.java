@@ -8,12 +8,12 @@ public class DBMessage {
 	private RequestType reqType;
 	private String recordId;
 	private String record;
-	
+
 
 	public DBMessage() {}
-	
-	
-	
+
+
+
 	public DBMessage(RequestType reqType, String recordID, String record) {
 		this.reqType = reqType;
 		this.recordId = recordID;

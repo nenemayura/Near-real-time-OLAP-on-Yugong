@@ -1,4 +1,4 @@
-
+package com.communication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
