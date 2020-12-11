@@ -1,6 +1,10 @@
+package com.communication;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
+
+import com.dbOperations.DBOperationManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Subscriber {
@@ -40,15 +44,40 @@ public class Subscriber {
 							Thread.sleep(100);
 						}
 						String received = disSubFromPub.readUTF();
+						System.out.println("Received "+received+" at subscriber ");
 						
 						DBMessage messageReceived = objMapper.readValue(received, DBMessage.class);
-						//TODO read from table in DB
-						DBMessage response = messageReceived;
-						if(response!= null) {
+						DBOperationManager dbOperationManager = new DBOperationManager();
+						String result = dbOperationManager.processMessageRequest(messageReceived);
+						System.out.println("msg received  "+messageReceived);
+						DBMessage response = new DBMessage();
+						if(messageReceived.getReqType().equals(RequestType.INSERT) ) {
 							response.setReqType(RequestType.ACK_INSERT);
+							response.setRecordId(messageReceived.getRecordId());
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
+							System.out.println("Wrote ack insert to publisher  ");
+						} else if (messageReceived.getReqType().equals(RequestType.EDIT)) {
+							response.setReqType(RequestType.ACK_EDIT);
+							response.setRecordId(messageReceived.getRecordId());
+							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
+							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
+							System.out.println("Wrote ack insert to publisher  ");
+						} else if (messageReceived.getReqType().equals(RequestType.READ)) {
+							response.setReqType(RequestType.READ_RESPONSE);
+							response.setRecord(result);
+							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
+							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
+							System.out.println("Wrote response  to publisher  "+result);
 						}
+						//TODO read from table in DB
+//						DBMessage response = messageReceived;
+//						if(response!= null) {
+//							response.setReqType(RequestType.ACK_INSERT);
+//							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
+//							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
+//							System.out.println("Wrote ack insert to publisher  ");
+//						}
 					}
 				} catch (Exception e) {
 					e.printStackTrace();

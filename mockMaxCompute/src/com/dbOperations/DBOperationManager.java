@@ -147,7 +147,9 @@ public class DBOperationManager {
 		query.append(" VALUES ( ");
 		query.append(messageReceived.getRecordId());
 		query.append(",");
+		query.append(" \"");
 		query.append(recordValues);
+		query.append(" \"");
 		query.append(" )");
 		System.out.println("Query is "+query);
 		try {
