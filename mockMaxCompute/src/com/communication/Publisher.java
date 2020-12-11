@@ -250,8 +250,8 @@ public class Publisher {
 									 * once the request is successful flush the ack entry from map to enable
 									 * processing request on same entry by same client
 									 **/
-									//populateStateTable(inputMessage.getRecordId(), ackMap.get(requestKey));
-									updateDataBase(inputMessage.getRecordId(), ackMap.get(requestKey));
+									populateStateTable(inputMessage.getTableName(), ackMap.get(requestKey));
+									updateDataBase(inputMessage.getTableName(), ackMap.get(requestKey));
 									flushKeyFromAckMap(requestKey);
 									
 									// TODO send response to user
@@ -284,9 +284,8 @@ public class Publisher {
 		};
 		listenAck.start();
 	}
-
-	public static void populateStateTable(String recordId, Set<String> set) {
-		int maxStateTableSize = 0;
+	public static void populateStateTable(String tableName, Set<String> set) {
+		int maxStateTableSize = 1000;
 		
 		final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 		rwl.readLock().lock();
@@ -297,31 +296,31 @@ public class Publisher {
 		if(recordIds.size()>maxStateTableSize) {
 			stateTable.remove(recordIds.get(0));
 		}
-		stateTable.put(recordId, set);
-		updateDataBase(recordId, set);
+		stateTable.put(tableName, set);
+		updateDataBase(tableName, set);
 		
 		rwl.writeLock().unlock();
-		System.out.println("Updated state table with id:" + recordId + "entries:" + set);
+		System.out.println("Updated state table with name:" + tableName + "entries:" + set);
 	}
 
-	public static void updateDataBase(String recordId, Set<String> set) {
+	public static void updateDataBase(String tableName, Set<String> set) {
 		Connection localConnection = DatabaseConnection.getConnection();
 		Statement stmt;
 
 		try {
 			stmt = localConnection.createStatement();
-			String tableName = "testtable";
 			String nodes = "";
 			for(String nodeId: set) {
 				nodes = nodes+","+ nodeId;
 			}
-			stmt.executeUpdate("INSERT INTO statetable(id, tablename, nodes) VALUES('"+ recordId+"','"+ tableName+"','" + nodes +"')"
+			stmt.executeUpdate("INSERT INTO statetable(id, tablename, nodes) VALUES('"+ 1+"','"+ tableName+"','" + nodes +"')"
 					+ "ON DUPLICATE KEY UPDATE nodes= '"+ nodes+"'"); 
 
 		} catch (SQLException e) {
 			System.out.println("Error while executing statement "+e);
 		}
 	}
+	
 	public static Socket getNodeWithUpdatedState(String recordId) {
 		System.out.println("gettting node for record id "+recordId);
 		String nodeId = "";
