@@ -1,6 +1,5 @@
 package com.communication;
 
-
 public class DBMessage {
 	//TODO: Add script to convert update and insert lines to SQL queries
 	//Input: | separated entry
@@ -9,25 +8,32 @@ public class DBMessage {
 	private String recordId;
 	private String record;
 
-
-	public DBMessage() {}
-
-
-
-	public DBMessage(RequestType reqType, String recordID, String record) {
-		this.reqType = reqType;
-		this.recordId = recordID;
+	private String senderId= "";
+	private String receiverId= "";
+	private String messageKey = "";
+	
+	//TODO do we need time stamp here?
+	public DBMessage(RequestType reqType, String recordId, String record) {
+		this.recordId = recordId;
 		this.record = record;
-		if (reqType==RequestType.READ){
-			//return the message back as is
-		}
-		else{
-			//parse and convert to query
-		}
+		this.reqType = reqType;
+		//TODO add query as per TTPC_H
 	}
-
-
-
+	public DBMessage() {
+	
+	}
+	public String getSenderId() {
+		return senderId;
+	}
+	public void setSenderId(String senderId) {
+		this.senderId = senderId;
+	}
+	public String getReceiverId() {
+		return receiverId;
+	}
+	public void setReceiverId(String receiverId) {
+		this.receiverId = receiverId;
+	}
 	public RequestType getReqType() {
 		return reqType;
 	}
@@ -47,3 +53,4 @@ public class DBMessage {
 		this.record = record;
 	}
 }
+
