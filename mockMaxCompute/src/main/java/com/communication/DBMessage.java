@@ -11,16 +11,24 @@ public class DBMessage {
 	private String senderId= "";
 	private String receiverId= "";
 	private String messageKey = "";
+	private String tableName;
 	
 	//TODO do we need time stamp here?
-	public DBMessage(RequestType reqType, String recordId, String record) {
+	public DBMessage(RequestType reqType, String recordId, String record, String tableName) {
 		this.recordId = recordId;
 		this.record = record;
 		this.reqType = reqType;
+		this.tableName = tableName;
 		//TODO add query as per TTPC_H
 	}
 	public DBMessage() {
 	
+	}
+	public String getTableName() {
+		return tableName;
+	}
+	public void setTableName(String tableName) {
+		this.tableName = tableName;
 	}
 	public String getSenderId() {
 		return senderId;
