@@ -45,10 +45,16 @@ public class DBMessageSource {
 					try {
         				ObjectMapper objMapper = new ObjectMapper();
 						DataOutputStream dos = new DataOutputStream(publisherSocket.getOutputStream());
-        				
-        				DBMessage message = new DBMessage(RequestType.INSERT, "123", "Sample record");
-						dos.writeUTF(objMapper.writeValueAsString(message));
-//						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
+        				if(count < 2) {
+        				DBMessage message = new DBMessage(RequestType.INSERT, "555", "Sample record", "test table);
+        				dos.writeUTF(objMapper.writeValueAsString(message));
+						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
+        				} else {
+        					DBMessage message = new DBMessage(RequestType.READ, "555", "Sample record", " test table);
+        					dos.writeUTF(objMapper.writeValueAsString(message));
+    						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
+        				}
+						
 						
 //        		        message = new DBMessage(RequestType.EDIT, "123", "Sample record");
 //						dos.writeUTF(objMapper.writeValueAsString(message));
@@ -59,9 +65,9 @@ public class DBMessageSource {
 ////						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
 //						
 						count++;
-						if(count%100 ==0) {
-							Thread.sleep(5000);
-						}
+					//	if(count%10 ==0) {
+							Thread.sleep(50000);
+						//}
 					} catch (Exception e) {
 						System.out.println("Exception in message source thread, closing connection");
 						e.printStackTrace();

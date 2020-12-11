@@ -7,5 +7,6 @@ public enum RequestType {
 	READ,
 	ACK_INSERT,
 	ACK_EDIT,
-	ACK_DELETE
+	ACK_DELETE,
+	READ_RESPONSE
 }

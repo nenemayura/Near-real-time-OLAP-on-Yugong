@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="BranchesTreeState">
+    <expand>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </expand>
+    <select />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="bb1b4e30-9db1-4bfc-92a9-92cb7441ed34" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/com/communication/DatabaseConnection.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/com/communication/DatabaseConstants.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/communication/DBMessage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/communication/DBMessage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/communication/DBMessageSource.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/communication/DBMessageSource.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/communication/Publisher.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/communication/Publisher.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/communication/RequestType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/communication/RequestType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/communication/Subscriber.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/communication/Subscriber.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/dbOperations/DBOperationManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/dbOperations/DBOperationManager.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="mavenHome" value="C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2020.2.3\plugins\maven\lib\maven3" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
+  <component name="ProjectId" id="1lRaadhnQU6o9URqxJaVMM7EOlk" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="RunManager">
+    <configuration name="DBMessageSource" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.communication.DBMessageSource" />
+      <module name="mockMaxCompute" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.DBMessageSource" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="bb1b4e30-9db1-4bfc-92a9-92cb7441ed34" name="Default Changelist" comment="" />
+      <created>1607562422149</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1607562422149</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="96" y="0" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1607562535303">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="96" y="0" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1280.680@0.0.1280.680" timestamp="1607562535303" />
+    <state x="371" y="130" key="#com.intellij.ide.util.TreeClassChooserDialog" timestamp="1607562532450">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="371" y="130" key="#com.intellij.ide.util.TreeClassChooserDialog/0.0.1280.680@0.0.1280.680" timestamp="1607562532450" />
+    <state x="363" y="30" key="#com.intellij.ide.util.frameworkSupport.AddFrameworkSupportDialog" timestamp="1607562459698">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="363" y="30" key="#com.intellij.ide.util.frameworkSupport.AddFrameworkSupportDialog/0.0.1280.680@0.0.1280.680" timestamp="1607562459698" />
+    <state x="421" y="96" key="FileChooserDialogImpl" timestamp="1607726401223">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="421" y="96" key="FileChooserDialogImpl/0.0.1280.680@0.0.1280.680" timestamp="1607726401223" />
+    <state width="1222" height="163" key="GridCell.Tab.0.bottom" timestamp="1607587057000">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state width="1222" height="163" key="GridCell.Tab.0.bottom/0.0.1280.680@0.0.1280.680" timestamp="1607587057000" />
+    <state width="1222" height="163" key="GridCell.Tab.0.center" timestamp="1607587057000">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state width="1222" height="163" key="GridCell.Tab.0.center/0.0.1280.680@0.0.1280.680" timestamp="1607587057000" />
+    <state width="1222" height="163" key="GridCell.Tab.0.left" timestamp="1607587056999">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state width="1222" height="163" key="GridCell.Tab.0.left/0.0.1280.680@0.0.1280.680" timestamp="1607587056999" />
+    <state width="1222" height="163" key="GridCell.Tab.0.right" timestamp="1607587057000">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state width="1222" height="163" key="GridCell.Tab.0.right/0.0.1280.680@0.0.1280.680" timestamp="1607587057000" />
+    <state x="346" y="73" width="778" height="534" key="find.popup" timestamp="1607585134224">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="346" y="73" width="778" height="534" key="find.popup/0.0.1280.680@0.0.1280.680" timestamp="1607585134224" />
+    <state x="297" y="153" key="run.anything.popup" timestamp="1607584009720">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="297" y="153" key="run.anything.popup/0.0.1280.680@0.0.1280.680" timestamp="1607584009720" />
+  </component>
+</project>
