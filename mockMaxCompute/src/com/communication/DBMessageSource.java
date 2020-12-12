@@ -13,6 +13,7 @@ public class DBMessageSource {
 	public static ServerSocket sourceToPubSocket;
     static String messageSourceIp = "localhost";
     static int messageSourcePort = 6432;
+    static String path = "/home/student/code/TPC_H_2_18_0_rc2/dbgen/";
    
     // give args as ip, port 
    
@@ -46,11 +47,11 @@ public class DBMessageSource {
         				ObjectMapper objMapper = new ObjectMapper();
 						DataOutputStream dos = new DataOutputStream(publisherSocket.getOutputStream());
         				if(count < 2) {
-        				DBMessage message = new DBMessage(RequestType.INSERT, "555", "Sample record", "test table);
+        				DBMessage message = new DBMessage(RequestType.INSERT, "555", "Sample record", "test table");
         				dos.writeUTF(objMapper.writeValueAsString(message));
 						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
         				} else {
-        					DBMessage message = new DBMessage(RequestType.READ, "555", "Sample record", " test table);
+        					DBMessage message = new DBMessage(RequestType.READ, "555", "Sample record", " test table");
         					dos.writeUTF(objMapper.writeValueAsString(message));
     						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
         				}

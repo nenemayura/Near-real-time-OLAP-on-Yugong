@@ -60,5 +60,11 @@ public class DBMessage {
 	public void setRecord(String record) {
 		this.record = record;
 	}
+	public String getMessageKey() {
+		return messageKey;
+	}
+	public void setMessageKey(String messageKey) {
+		this.messageKey = messageKey;
+	}
 }
 

@@ -8,5 +8,6 @@ public enum RequestType {
 	ACK_INSERT,
 	ACK_EDIT,
 	ACK_DELETE,
-	READ_RESPONSE
+	READ_RESPONSE,
+	TPC_READ
 }

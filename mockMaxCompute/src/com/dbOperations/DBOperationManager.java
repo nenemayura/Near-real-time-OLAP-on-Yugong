@@ -163,4 +163,27 @@ public class DBOperationManager {
 		
 		
 	}
+
+	
+		public String processTpcRead(String query) {
+			Statement stmt;
+			StringBuffer result = new StringBuffer();
+
+			ResultSet rs = null;
+			System.out.println("Executing tpc read "+query);
+			try {
+				stmt = localDbConnection.createStatement();
+				rs = stmt.executeQuery(query);
+				while(rs.next()) {
+					result.append(rs);
+					result.append("\n");
+				}
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			return result.toString();
+		}
+
 }

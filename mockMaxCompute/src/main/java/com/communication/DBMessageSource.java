@@ -1,5 +1,9 @@
-package com.communication;
+package main.java.com.communication;
 
+import com.communication.DBMessage;
+import com.communication.Query;
+import com.communication.RequestType;
+import com.communication.TableName;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.xml.internal.fastinfoset.util.StringArray;
 
@@ -16,6 +20,8 @@ public class DBMessageSource {
 	public static ServerSocket sourceToPubSocket;
     static String messageSourceIp = "localhost";
     static int messageSourcePort = 6432;
+    static String path = "/home/student/code/TPC_H_2_18_0_rc2/dbgen/";
+
    
     // give args as ip, port 
    
@@ -63,7 +69,7 @@ public class DBMessageSource {
 							Scanner insertQueryScanner;
 
 							try{
-								readQueriesFile = new File("tpch-stream.sql");
+								readQueriesFile = new File(path+"tpch-stream.sql");
 								readQueryScanner = new Scanner(readQueriesFile).useDelimiter(";");
 							}
 							catch (FileNotFoundException e) {
@@ -72,23 +78,23 @@ public class DBMessageSource {
 								throw new FileNotFoundException();
 
 							}
-							try{
-								updateQueryScanner = new Scanner(new File("update.tbl.u1"));
-							}
-							catch (FileNotFoundException e) {
-								System.out.println("An error occurred.");
-								e.printStackTrace();
-								throw new FileNotFoundException();
-							}
-							try{
-								insertQueryScanner = new Scanner(new File("insert.tbl"));
-							}
-							catch (FileNotFoundException e) {
-								System.out.println("An error occurred.");
-								e.printStackTrace();
-
-								throw new FileNotFoundException();
-							}
+//							try{
+//								updateQueryScanner = new Scanner(new File("update.tbl.u1"));
+//							}
+//							catch (FileNotFoundException e) {
+//								System.out.println("An error occurred.");
+//								e.printStackTrace();
+//								throw new FileNotFoundException();
+//							}
+//							try{
+//								insertQueryScanner = new Scanner(new File("insert.tbl"));
+//							}
+//							catch (FileNotFoundException e) {
+//								System.out.println("An error occurred.");
+//								e.printStackTrace();
+//
+//								throw new FileNotFoundException();
+//							}
 
 							int readOffset = 0;
 
@@ -97,31 +103,44 @@ public class DBMessageSource {
 
 								while (readQueryScanner.hasNext() && readOffset<10) {
 									Query readQuery = new Query(RequestType.READ, readQueryScanner.next()+";");
-									System.out.println(readQuery.getQuery());
+									//System.out.println(readQuery.getQuery());
+									DBMessage message = new DBMessage(RequestType.TPC_READ, "1", readQuery.getQuery(), "");
+									dos.writeUTF(objMapper.writeValueAsString(message));
+									System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
+									Thread.sleep(10000);
+
 									readOffset++;
 								}
 								if (readOffset==10)
 									readOffset=0;
-								if (!readQueryScanner.hasNext())
+								if (!readQueryScanner.hasNext()) {
 									readQueryScanner = new Scanner(readQueriesFile).useDelimiter(";");
-								if (updateQueryScanner.hasNextLine()){
-									Query updateQuery = new Query(RequestType.EDIT,updateQueryScanner.nextLine(),TableName.customer);
-									System.out.println(updateQuery.getQuery());
-								}
-								else
 									break;
-								if (insertQueryScanner.hasNextLine()){
-									Query insertQuery = new Query(RequestType.INSERT,insertQueryScanner.nextLine(),TableName.customer);
-									System.out.println(insertQuery.getQuery());
 								}
-								else
-									break;
+//								if (updateQueryScanner.hasNextLine()){
+//									Query updateQuery = new Query(RequestType.EDIT,updateQueryScanner.nextLine(),TableName.customer);
+//									System.out.println(updateQuery.getQuery());
+//									Thread.sleep(10000);
+//								}
+//								else
+//									break;
+//								if (insertQueryScanner.hasNextLine()){
+//									Query insertQuery = new Query(RequestType.INSERT,insertQueryScanner.nextLine(),TableName.customer);
+//									System.out.println(insertQuery.getQuery());
+//									Thread.sleep(10000);
+//
+//								}
+//								else
+//									break;
+								
+								
+		
 
 							}
 
 							readQueryScanner.close();
-							updateQueryScanner.close();
-							insertQueryScanner.close();
+							//updateQueryScanner.close();
+							//insertQueryScanner.close();
 						}
 						catch (FileNotFoundException e) {
 							System.out.println("An error occurred.");

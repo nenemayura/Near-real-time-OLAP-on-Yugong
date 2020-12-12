@@ -54,7 +54,10 @@ public class Subscriber {
 						String result = dbOperationManager.processMessageRequest(messageReceived);
 						System.out.println("msg received  "+messageReceived);
 						DBMessage response = new DBMessage();
-						if(messageReceived.getReqType().equals(RequestType.INSERT) ) {
+						if(messageReceived.getReqType().equals(RequestType.TPC_READ)) {
+							result = dbOperationManager.processTpcRead(messageReceived.getRecord());
+							System.out.println("The result receivd is "+result);
+						} else if(messageReceived.getReqType().equals(RequestType.INSERT) ) {
 							response.setReqType(RequestType.ACK_INSERT);
 							response.setRecordId(messageReceived.getRecordId());
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());

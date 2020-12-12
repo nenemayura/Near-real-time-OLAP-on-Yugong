@@ -183,6 +183,12 @@ public class Publisher {
 						String received = dis.readUTF();
 
 						DBMessage inputMessage = objMapper.readValue(received, DBMessage.class);
+						
+						if(inputMessage.getReqType().equals(RequestType.TPC_READ)) {
+							System.out.println("Added tpc read");
+
+							inputMessages.add(inputMessage);
+						}
 
 						if (inputMessage.getReqType() == RequestType.INSERT
 								|| inputMessage.getReqType() == RequestType.DELETE
