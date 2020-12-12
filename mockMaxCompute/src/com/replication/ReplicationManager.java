@@ -21,11 +21,13 @@ import com.constants.DatabaseConstants;
  *
  */
 public class ReplicationManager {
-
+	private TableName[] replicatedTables;
 	/**
-	 * @param args
+	 * @param args - IP of the remote DB and tables to be copied
 	 */
+// TODO Add inout arguments IP and table name to be copied
 	public static void main(String[] args) {
+
 		// get local connection
 		
 		Connection localConnection = DatabaseConnection.getConnection();
@@ -38,10 +40,12 @@ public class ReplicationManager {
 		ResultSet rs = selectDataFromLocalDatabase(localConnection);
 		
 		// insert into remote
-		replicateDataToRemote(remoteConnection, rs);
-	}
+		replicateDataToRemote(remoteConnection, rs, tableName);
 
-	private static void replicateDataToRemote(Connection remoteConnection, ResultSet rs) {
+		//delete from local
+		deleteReplicatedTables();
+	}
+	private static void replicateDataToRemote(Connection remoteConnection, ResultSet rs, TableName tableName) {
 		try {
 			System.out.println("Replicating data to remote");
 			ResultSetMetaData meta = rs.getMetaData();
@@ -50,7 +54,7 @@ public class ReplicationManager {
 		         columns.add(meta.getColumnName(i));
 
 		     PreparedStatement replicationQuery = remoteConnection.prepareStatement(
-		                "INSERT INTO " + "emp" + " ("
+		                "INSERT INTO " + tableName.name() + " ("
 		              + columns.stream().collect(Collectors.joining(", "))
 		              + ") VALUES ("
 		              + columns.stream().map(c -> "?").collect(Collectors.joining(", "))
@@ -63,7 +67,7 @@ public class ReplicationManager {
 		        replicationQuery.addBatch();
 		        }
 		   replicationQuery.executeBatch();
-			
+			relicatedTables.add(tableName);
 		   System.out.println("Data replicated");
 
 		} catch (SQLException e) {
@@ -106,6 +110,21 @@ public class ReplicationManager {
 
 		} 
 		return remoteConnection;
+	}
+
+	public static void deleteReplicatedTables(){
+		for (TableName t:replicatedTables){
+			deleteQuery = "DROP TABLE "+t.name()";";
+			try {
+				stmt = localConnection.createStatement();
+				rs =stmt.executeQuery(deleteQuery);
+				System.out.println("Successfully deleted table "+t.name());
+
+			} catch (SQLException e) {
+				System.out.println("Error while executing statement "+e);
+			}
+
+		}
 	}
 
 }

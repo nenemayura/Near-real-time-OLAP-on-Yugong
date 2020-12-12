@@ -47,8 +47,7 @@ public class DBMessageSource {
 					publisherSocket = sourceToPubSocket.accept();
 
 				} catch (IOException e1) {
-					System.out.println("An error occurred.");
-					e1.printStackTrace();
+					System.out...Trace();
 				}
 				System.out.println("Starting thread at message source to send messages to publisher");
 				//while (true) {
