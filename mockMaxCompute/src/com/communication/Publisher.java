@@ -280,7 +280,9 @@ public class Publisher {
 
 						DBMessage inputMessage = objMapper.readValue(received, DBMessage.class);
 						int numNodes = subscriberNodeSocketMap.size();
-
+						if(inputMessage.getReqType() == RequestType.REP_TABLES){
+							subscriberReplicaMap.add(inputMessage.getSenderId(),inputMessage.getReplicatedTables());
+						}
 						if (inputMessage.getReqType() == RequestType.ACK_INSERT
 								|| inputMessage.getReqType() == RequestType.ACK_DELETE
 								|| inputMessage.getReqType() == RequestType.ACK_EDIT) {
@@ -425,7 +427,24 @@ public class Publisher {
 			maxIntNode = nodeIdsStateTable.iterator().next();
 		}
 		tableNames.removeAll(maxIntTables);
-		requestRepTables(inputMessage, subscriberNodeSocketMap.get(maxIntNode), tableNames);
+		Map<String,String> remoteSubsAndTable = new HashMap();
+		Iterator<String> it = tableNames.iterator();
+		while(it.hasNext()){
+			String tableName = it.next();
+			Iterator<Map.Entry<String, Set<String>>> itr = subscriberReplicaMap.entrySet().iterator();
+			while(itr.hasNext()){
+				Map.Entry<String, Set<String>> entry = itr.next();
+				Set<String> tableSet = entry.getValue();
+				if (tableSet.contains(tableName)) {
+					remoteSubsAndTable.put(tableName, entry.getKey());
+					break;
+				}				
+
+			}
+
+
+		}
+		requestRepTables(inputMessage, subscriberNodeSocketMap.get(maxIntNode), remoteSubsAndTable);
 		
 		if (subscriberNodeSocketMap.containsKey(maxIntNode)) {
 			System.out.println("Subscriber node map contains the " + maxIntNode);
@@ -435,7 +454,7 @@ public class Publisher {
 		return null;
 	}
 	
-	public static void requestRepTables(DBMessage inputMessage, Socket subSocket, Set<String> repTables){
+	public static void requestRepTables(DBMessage inputMessage, Socket subSocket, Map<String,String> remoteSubsAndTable){
 
 		ObjectMapper objMapper = new ObjectMapper();
 		DataOutputStream dos;
@@ -443,7 +462,7 @@ public class Publisher {
 			dos = new DataOutputStream(subSocket.getOutputStream());
 			if (repTables.size()>0) {
 				inputMessage.setReqType(RequestType.REP_TABLES);
-				inputMessage.setTableNames(repTables);
+				inputMessage.setTableToNodeMap(remoteSubsAndTable);
 				dos.writeUTF(objMapper.writeValueAsString(inputMessage));
 
 			}else { // rep tables size <=0 no rep required

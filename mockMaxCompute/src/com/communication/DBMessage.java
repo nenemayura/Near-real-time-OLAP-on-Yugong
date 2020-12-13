@@ -26,6 +26,12 @@ public class DBMessage {
 	private long endTime;
 	private Set<String> tablesToReplicate;
 
+
+
+	private Set<String> replicatedTables; //tables that have already been replicated
+	
+	private Map<String,String> tableToNodeMap;
+
 	// TODO do we need time stamp here?
 	public DBMessage(RequestType reqType, String recordId, String record, String tableName, Set<String> tablesNamesSet) {
 		this.recordId = recordId;
@@ -133,4 +139,19 @@ public class DBMessage {
 	public void setTablesToReplicate(Set<String> tablesToReplicate) {
 		this.tablesToReplicate = tablesToReplicate;
 	}
+	public Map<String, String> getTableToNodeMap() {
+		return tableToNodeMap;
+	}
+
+	public void setTableToNodeMap(Map<String, String> tableToNodeMap) {
+		this.tableToNodeMap = tableToNodeMap;
+	}
+	public Set<String> getReplicatedTables() {
+		return replicatedTables;
+	}
+
+	public void setReplicatedTables(Set<String> replicatedTables) {
+		this.replicatedTables = replicatedTables;
+	}
+
 }

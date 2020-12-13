@@ -55,24 +55,47 @@ public class ReplicationManager {
 //		deleteReplicatedTables();
 
 	//}
-	public void selectDataFromRemote(Connection remoteConnection, TableName tableName){
+	public ResultSet selectDataFromRemote(Connection remoteConnection, TableName tableName){
 		Statement statement;
 		ResultSet rs = null;
 		try{
 			statement = remoteConnection.createStatement();
 			rs = statement.executeQuery("SELECT * FROM "+tableName);
-			
-			
-			
+
 		}
+		catch (Exeption e){
+			System.out.println("Error while executing statement "+e);
+		}
+		return rs;
 	}
-	public void replicateDataFromRemote(Connection remoteConnection,TableName tableName){
+	public void replicateDataFromRemote(ResultSet rs, TableName tableName){
+
 		try{
 			System.out.println("Replicating data from remote");
-			PreparedStatement replicationQuery = remoteConnection.prepareStatement(
-					"SELECT * FROM " + tableName;
-			)
+			ResultSetMetaData meta = rs.getMetaData();
+			List<String> columns = new ArrayList<>();
+			for (int i = 1; i <= meta.getColumnCount(); i++)
+				columns.add(meta.getColumnName(i));
 
+			PreparedStatement replicationQuery = this.localConnection.prepareStatement(
+					"INSERT INTO " + tableName.name() + " ("
+							+ columns.stream().collect(Collectors.joining(", "))
+							+ ") VALUES ("
+							+ columns.stream().map(c -> "?").collect(Collectors.joining(", "))
+							+ ")");
+
+			while (rs.next()) {
+				for (int i = 1; i <= meta.getColumnCount(); i++)
+					replicationQuery.setObject(i, rs.getObject(i));
+
+				replicationQuery.addBatch();
+			}
+			replicationQuery.executeBatch();
+			this.replicatedTables.add(tableName);
+			System.out.println("Data replicated");
+
+		} catch (SQLException e) {
+			System.out.println("Error while executing statement "+e);
 		}
 
 	}

@@ -12,7 +12,6 @@ import java.util.List;
 
 public class Subscriber {
 	public static List<String>replicatedTables;
-	public static ReplicationManager replicationManager= new ReplicationManager();;
 	public static Socket subToPubSocket;
     static String pubSvrIp = "localhost";
     static int port_listen_to = 5432;
@@ -106,18 +105,22 @@ public class Subscriber {
 							System.out.println("Wrote response  to publisher  "+result);
 						}
 						else if (messageReceived.getReqType().equals(RequestType.REP_TABLES)){
-							Set<String> replicatedTables = messageReceived.getTables();
-							Iterator<String> it = replicatedTables.iterator();
-							while(it.hasNext()){
-								String tableName = it.next();
-								ReplicationManager replicationManager = new ReplicationManager();
-
+							Map<String,String> replicatedTables = messageReceived.getTableToNodeMap();
+							Iterator<Map.Entry<String, String>> itr = replicatedTables.entrySet().iterator();
+							ReplicationManager replicationManager = new ReplicationManager();
+							while(itr.hasNext()){
+								Map.Entry<String, String> entry = itr.next();
+								Connection rc = replicationManager.getRemoteDatabaseConnection(entry.getValue());
+								ResultSet rs = replicationManager.selectDataFromRemote(rc,entry.getKey());
+								replicationManager.replicateDataFromRemote(rs,entry.getKey());
+								this.replicatedTables.add(entry.getKey());
 							}
 
-							replicationManager.setReplicatedTables(messageReceived.getTables());
-							Connection remoteConnection = replicationManager.getRemoteDatabaseConnection(); //need to set remote ip
-							
+
+							result = dbOperationManager.processTpcRead(messageReceived.getRecord());
+							System.out.println("The result receivd is "+result);
 							response.setReqType(RequestType.REP_TABLES);
+							response.setReplicatedTables(this.replicatedTables);
 							response.setRecord(result);
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
