@@ -1,4 +1,7 @@
+package com.communication;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stateTable.StateTableOperationManager;
 
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
@@ -11,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -281,7 +285,7 @@ public class Publisher {
 						DBMessage inputMessage = objMapper.readValue(received, DBMessage.class);
 						int numNodes = subscriberNodeSocketMap.size();
 						if(inputMessage.getReqType() == RequestType.REP_TABLES){
-							subscriberReplicaMap.add(inputMessage.getSenderId(),inputMessage.getReplicatedTables());
+							subscriberReplicaMap.put(inputMessage.getSenderId(),inputMessage.getReplicatedTables());
 						}
 						if (inputMessage.getReqType() == RequestType.ACK_INSERT
 								|| inputMessage.getReqType() == RequestType.ACK_DELETE
@@ -460,7 +464,7 @@ public class Publisher {
 		DataOutputStream dos;
 		try {
 			dos = new DataOutputStream(subSocket.getOutputStream());
-			if (repTables.size()>0) {
+			if (remoteSubsAndTable.size()>0) {
 				inputMessage.setReqType(RequestType.REP_TABLES);
 				inputMessage.setTableToNodeMap(remoteSubsAndTable);
 				dos.writeUTF(objMapper.writeValueAsString(inputMessage));
@@ -500,14 +504,14 @@ public class Publisher {
 		}
 		return nodesIdsClean;
 	}
-	public synchronized static void requestRepTables(Socket subSocket, Set<TableNames> repTables){
-		if (repTables.size()<1)
-			return;
-		DBMessage repRequest = new DBMessage();
-		repRequest.setReqType(RequestType.REP_TABLES);
-		repRequest.setTableNames(repTables);
-
-	}
+//	public synchronized static void requestRepTables(Socket subSocket, Set<String> repTables){
+//		if (repTables.size()<1)
+//			return;
+//		DBMessage repRequest = new DBMessage();
+//		repRequest.setReqType(RequestType.REP_TABLES);
+//		repRequest.setTableNames(repTables);
+//
+//	}
 	public synchronized static void updateAckMap(String ackMapkey, String nodeId) {
 		final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 		rwl.readLock().lock();

@@ -1,5 +1,6 @@
 package com.communication;
 
+import java.util.Map;
 import java.util.Set;
 
 public class DBMessage {

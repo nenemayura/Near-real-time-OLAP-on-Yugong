@@ -6,7 +6,12 @@ import com.replication.ReplicationManager;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 
 
@@ -15,6 +20,7 @@ public class Subscriber {
 	public static Socket subToPubSocket;
     static String pubSvrIp = "localhost";
     static int port_listen_to = 5432;
+   
 	
 	public static void main(String args[]) {
 		if(args.length >0 ) {
@@ -31,12 +37,13 @@ public class Subscriber {
 
 
 	public static void deleteTables() {
+		ReplicationManager replicationManager = new ReplicationManager();
 		Thread deleteTablesThread = new Thread() {
 			public void run() {
 				while(true) {
 					try {
 
-						replicationManager.deleteReplicatedTables();
+						replicationManager.deleteReplicatedTables(replicatedTables);
 						
 							Thread.sleep(30000);
 						} catch (Exception e) {
@@ -105,22 +112,22 @@ public class Subscriber {
 							System.out.println("Wrote response  to publisher  "+result);
 						}
 						else if (messageReceived.getReqType().equals(RequestType.REP_TABLES)){
-							Map<String,String> replicatedTables = messageReceived.getTableToNodeMap();
-							Iterator<Map.Entry<String, String>> itr = replicatedTables.entrySet().iterator();
+							Map<String,String> tablesToRepli = messageReceived.getTableToNodeMap();
+							Iterator<Map.Entry<String, String>> itr = tablesToRepli.entrySet().iterator();
 							ReplicationManager replicationManager = new ReplicationManager();
 							while(itr.hasNext()){
 								Map.Entry<String, String> entry = itr.next();
 								Connection rc = replicationManager.getRemoteDatabaseConnection(entry.getValue());
 								ResultSet rs = replicationManager.selectDataFromRemote(rc,entry.getKey());
 								replicationManager.replicateDataFromRemote(rs,entry.getKey());
-								this.replicatedTables.add(entry.getKey());
+								replicatedTables.add(entry.getKey());
 							}
 
 
 							result = dbOperationManager.processTpcRead(messageReceived.getRecord());
 							System.out.println("The result receivd is "+result);
 							response.setReqType(RequestType.REP_TABLES);
-							response.setReplicatedTables(this.replicatedTables);
+							response.setReplicatedTables(new HashSet<String>(replicatedTables));
 							response.setRecord(result);
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));

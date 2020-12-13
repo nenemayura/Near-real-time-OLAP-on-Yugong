@@ -7,7 +7,7 @@ import com.communication.TableName;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.xml.internal.fastinfoset.util.StringArray;
 
-import javax.management.Query;
+
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;

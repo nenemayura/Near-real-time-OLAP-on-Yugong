@@ -55,7 +55,7 @@ public class ReplicationManager {
 //		deleteReplicatedTables();
 
 	//}
-	public ResultSet selectDataFromRemote(Connection remoteConnection, TableName tableName){
+	public ResultSet selectDataFromRemote(Connection remoteConnection, String tableName){
 		Statement statement;
 		ResultSet rs = null;
 		try{
@@ -63,12 +63,12 @@ public class ReplicationManager {
 			rs = statement.executeQuery("SELECT * FROM "+tableName);
 
 		}
-		catch (Exeption e){
+		catch (Exception e){
 			System.out.println("Error while executing statement "+e);
 		}
 		return rs;
 	}
-	public void replicateDataFromRemote(ResultSet rs, TableName tableName){
+	public void replicateDataFromRemote(ResultSet rs, String tableName){
 
 		try{
 			System.out.println("Replicating data from remote");
@@ -78,7 +78,7 @@ public class ReplicationManager {
 				columns.add(meta.getColumnName(i));
 
 			PreparedStatement replicationQuery = this.localConnection.prepareStatement(
-					"INSERT INTO " + tableName.name() + " ("
+					"INSERT INTO " + tableName + " ("
 							+ columns.stream().collect(Collectors.joining(", "))
 							+ ") VALUES ("
 							+ columns.stream().map(c -> "?").collect(Collectors.joining(", "))
@@ -99,7 +99,7 @@ public class ReplicationManager {
 		}
 
 	}
-	public  void replicateDataToRemote(Connection remoteConnection, ResultSet rs, TableName tableName) {
+	public  void replicateDataToRemote(Connection remoteConnection, ResultSet rs, String tableName) {
 		try {
 			System.out.println("Replicating data to remote");
 			ResultSetMetaData meta = rs.getMetaData();
@@ -108,7 +108,7 @@ public class ReplicationManager {
 		         columns.add(meta.getColumnName(i));
 
 		     PreparedStatement replicationQuery = remoteConnection.prepareStatement(
-		                "INSERT INTO " + tableName.name() + " ("
+		                "INSERT INTO " + tableName + " ("
 		              + columns.stream().collect(Collectors.joining(", "))
 		              + ") VALUES ("
 		              + columns.stream().map(c -> "?").collect(Collectors.joining(", "))
@@ -145,7 +145,7 @@ public class ReplicationManager {
 		return rs;  
 	}
 
-	private static Connection getRemoteDatabaseConnection(String remoteIp) {
+	public  Connection getRemoteDatabaseConnection(String remoteIp) {
 		
 		String remoteUrl = "jdbc:mysql://"+remoteIp+":3306/tpch?characterEncoding=latin1";
 		System.out.println("Connecting remote database...");
@@ -166,14 +166,14 @@ public class ReplicationManager {
 		return remoteConnection;
 	}
 
-	public void deleteReplicatedTables(){
+	public void deleteReplicatedTables(List<String>replicatedTables ){
 		System.out.println("Deleting replicated tables");
-		for (TableName t:replicatedTables){
-			String deleteQuery = "DROP TABLE "+t.name()+";";
+		for (String t:replicatedTables){
+			String deleteQuery = "DROP TABLE "+t+";";
 			try {
 				Statement stmt = this.localConnection.createStatement();
 				ResultSet rs = stmt.executeQuery(deleteQuery);
-				System.out.println("Successfully deleted table "+t.name());
+				System.out.println("Successfully deleted table "+t);
 
 			} catch (SQLException e) {
 				System.out.println("Error while executing statement "+e);
