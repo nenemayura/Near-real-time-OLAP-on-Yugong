@@ -105,6 +105,24 @@ public class Subscriber {
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
 							System.out.println("Wrote response  to publisher  "+result);
 						}
+						else if (messageReceived.getReqType().equals(RequestType.REP_TABLES)){
+							Set<String> replicatedTables = messageReceived.getTables();
+							Iterator<String> it = replicatedTables.iterator();
+							while(it.hasNext()){
+								String tableName = it.next();
+								ReplicationManager replicationManager = new ReplicationManager();
+
+							}
+
+							replicationManager.setReplicatedTables(messageReceived.getTables());
+							Connection remoteConnection = replicationManager.getRemoteDatabaseConnection(); //need to set remote ip
+							
+							response.setReqType(RequestType.REP_TABLES);
+							response.setRecord(result);
+							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
+							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
+							System.out.println("Wrote response  to publisher  "+result);
+						}
 						Thread.sleep(10000);
 						//TODO read from table in DB
 //						DBMessage response = messageReceived;

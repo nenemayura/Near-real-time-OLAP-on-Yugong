@@ -410,7 +410,7 @@ public class Publisher {
 					nodeId = entry.getKey();
 				}
 			}
-			reqTables.removeAll(max);
+			requestRepTables(subscriberNodeSocketMap.get(nodeId),reqTables.removeAll(max));
 			final Connection con = DatabaseConnection.getConnection();
 			StateTableOperationManager stateTableHandler = new StateTableOperationManager(con);
 			nodeId = stateTableHandler.readFromStateTable(tableName, "testtable");
@@ -429,7 +429,14 @@ public class Publisher {
 		}
 		return null;
 	}
+	public synchronized static void requestRepTables(Socket subSocket, Set<TableNames> repTables){
+		if (repTables.size()<1)
+			return;
+		DBMessage repRequest = new DBMessage();
+		repRequest.setReqType(RequestType.REP_TABLES);
+		repRequest.setTableNames(repTables);
 
+	}
 	public synchronized static void updateAckMap(String ackMapkey, String nodeId) {
 		final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 		rwl.readLock().lock();

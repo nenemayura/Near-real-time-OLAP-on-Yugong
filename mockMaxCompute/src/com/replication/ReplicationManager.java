@@ -23,7 +23,7 @@ import com.constants.DatabaseConstants;
  */
 public class ReplicationManager {
 
-	private List<TableName> replicatedTables;
+	private List<String> replicatedTables;
 	private Connection localConnection;
 	/**
 	 * @param args - IP of the remote DB and tables to be copied
@@ -55,6 +55,27 @@ public class ReplicationManager {
 //		deleteReplicatedTables();
 
 	//}
+	public void selectDataFromRemote(Connection remoteConnection, TableName tableName){
+		Statement statement;
+		ResultSet rs = null;
+		try{
+			statement = remoteConnection.createStatement();
+			rs = statement.executeQuery("SELECT * FROM "+tableName);
+			
+			
+			
+		}
+	}
+	public void replicateDataFromRemote(Connection remoteConnection,TableName tableName){
+		try{
+			System.out.println("Replicating data from remote");
+			PreparedStatement replicationQuery = remoteConnection.prepareStatement(
+					"SELECT * FROM " + tableName;
+			)
+
+		}
+
+	}
 	public  void replicateDataToRemote(Connection remoteConnection, ResultSet rs, TableName tableName) {
 		try {
 			System.out.println("Replicating data to remote");
@@ -137,11 +158,11 @@ public class ReplicationManager {
 
 		}
 	}
-	public List<TableName> getReplicatedTables() {
+	public List<String> getReplicatedTables() {
 		return replicatedTables;
 	}
 
-	public void setReplicatedTables(List<TableName> replicatedTables) {
+	public void setReplicatedTables(List<String> replicatedTables) {
 		this.replicatedTables = replicatedTables;
 	}
 
