@@ -403,11 +403,11 @@ public class Publisher {
 					nodeId = entry.getKey();
 				}
 				else if (max.size() < intersection.size()) {
-					max = intersection;
+					max = entry.getValue();
 					nodeId = entry.getKey();
 				}
 			}
-			reqTables.removeAll(intersection);
+			reqTables.removeAll(max);
 			final Connection con = DatabaseConnection.getConnection();
 			StateTableOperationManager stateTableHandler = new StateTableOperationManager(con);
 			nodeId = stateTableHandler.readFromStateTable(recordId, "testtable");
