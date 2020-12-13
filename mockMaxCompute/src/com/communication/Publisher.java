@@ -1,7 +1,4 @@
-package com.communication;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.stateTable.StateTableOperationManager;
 
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
@@ -11,6 +8,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -45,9 +44,10 @@ public class Publisher {
 	public static volatile ConcurrentHashMap<String, Set<String>> ackMap = new ConcurrentHashMap<String, Set<String>>();
 	public static volatile ConcurrentHashMap<String, Set<String>> stateTable = new ConcurrentHashMap<String, Set<String>>();
 	public static ConcurrentHashMap<String, Socket> subscriberNodeSocketMap = new ConcurrentHashMap<String, Socket>();
-	public static ConcurrentHashMap<String, Set<TableNames>> subscriberReplicaMap = new ConcurrentHashMap<String, Set<TableNames>>;
 	public static int Nw = 2; // TODO remove hardcoding
 	public static volatile List<RequestStat> requestStats = new ArrayList<RequestStat>();
+	public static ConcurrentHashMap<String, Set<String>> subscriberReplicaMap = new ConcurrentHashMap<String, Set<String>>();
+
 
 	// method to publish notification whenever DB entry is created
 	public static void main(String args[]) {
@@ -164,26 +164,25 @@ public class Publisher {
 							Thread.sleep(500);
 						}
 						DBMessage messageToPublish = inputMessages.poll();
-						//TODO Decide which subscriber to send -- c
-//						Iterator<Map.Entry<String, Socket>> iterator = subscriberNodeSocketMap.entrySet().iterator();
 
+						Iterator<Map.Entry<String, Socket>> iterator = subscriberNodeSocketMap.entrySet().iterator();
 						System.out.println("Writing msg to subscribers");
-//						while (iterator.hasNext()) {
-//							Entry<String, Socket> entry = iterator.next();
-//							Socket nodeSocket = entry.getValue();
-//
-//							try {
-//								DataOutputStream dos = new DataOutputStream(nodeSocket.getOutputStream());
-//								dos.writeUTF(objMapper.writeValueAsString(messageToPublish));
-//								System.out.println(" msg to subscribers .... " + messageToPublish);
-//
-//							} catch (Exception e) {
-//								System.out.println("Exception while broadcasting, closing connection");
-//								e.printStackTrace();
-//								nodeSocket.close();
-//								iterator.remove();
-//							}
-//						}
+						while (iterator.hasNext()) {
+							Entry<String, Socket> entry = iterator.next();
+							Socket nodeSocket = entry.getValue();
+
+							try {
+								DataOutputStream dos = new DataOutputStream(nodeSocket.getOutputStream());
+								dos.writeUTF(objMapper.writeValueAsString(messageToPublish));
+								System.out.println(" msg to subscribers .... " + messageToPublish);
+
+							} catch (Exception e) {
+								System.out.println("Exception while broadcasting, closing connection");
+								e.printStackTrace();
+								nodeSocket.close();
+								iterator.remove();
+							}
+						}
 					} catch (Exception e) {
 						System.out.println("Exception in publish thread");
 						e.printStackTrace();
@@ -219,7 +218,6 @@ public class Publisher {
 						String received = dis.readUTF();
 
 						DBMessage inputMessage = objMapper.readValue(received, DBMessage.class);
-						System.out.println("Message received from source "+inputMessage.toString());
 
 						Date date = new Date();
 						long startTime = date.getTime();
@@ -239,8 +237,7 @@ public class Publisher {
 
 						} else if (inputMessage.getReqType() == RequestType.READ) {
 
-							Socket readTargetNodeSocket = getNodeWithUpdatedState(inputMessage.                            ());
-
+							Socket readTargetNodeSocket = getNodeWithUpdatedState(inputMessage, inputMessage.getTableNames());
 							if ( readTargetNodeSocket!= null) {
 								DataOutputStream dos = new DataOutputStream(readTargetNodeSocket.getOutputStream());
 								dos.writeUTF(objMapper.writeValueAsString(inputMessage));
@@ -283,9 +280,7 @@ public class Publisher {
 
 						DBMessage inputMessage = objMapper.readValue(received, DBMessage.class);
 						int numNodes = subscriberNodeSocketMap.size();
-						if (inputMessage.getReqType() == RequestType.REP_TABLES){
-							subscriberReplicaMap.put(nodeSocket.getRemoteSocketAddress().toString(),inputMessage.getTables());
-						}
+
 						if (inputMessage.getReqType() == RequestType.ACK_INSERT
 								|| inputMessage.getReqType() == RequestType.ACK_DELETE
 								|| inputMessage.getReqType() == RequestType.ACK_EDIT) {
@@ -386,48 +381,104 @@ public class Publisher {
 		} catch (SQLException e) {
 			System.out.println("Error while executing statement " + e);
 		}
-	}
+	}	
+	
+	public static Socket getNodeWithUpdatedState(DBMessage inputMessage, Set<String> tableNames) {
+		List<Set<String>> nodeIdsTableWise = new ArrayList<Set<String>>();
+		for(String tableName: tableNames) {
+			System.out.println("gettting node for tableName " + tableName);
+			if (stateTable.get(tableName) != null) { // if the record is present in state table return any node in the list
+				Set<String> temp = stateTable.get(tableName);
+				nodeIdsTableWise.add(temp);
+			}else {
+				final Connection con = DatabaseConnection.getConnection();
+				StateTableOperationManager stateTableHandler = new StateTableOperationManager(con);
+				String nodeIdConcatnated  = stateTableHandler.readFromStateTable("0", tableName); // record id, table name
+				
+				String[] nodesIdSplit = nodeIdConcatnated.split(DatabaseConstants.COMMA_DELIMETER);
+				String[] nodesIdsClean = cleanNodeId(nodesIdSplit);
+				Set<String> table_nodes = new HashSet<String>(Arrays.asList(nodesIdsClean));
+				nodeIdsTableWise.add(table_nodes);
+				System.out.println("Node id received from the state table " + nodesIdSplit);
+			}
+		}
+		Set<String> nodeIdsStateTable = getMaxIntersection(nodeIdsTableWise);
+		String maxIntNode = "";
+		Set<String> maxIntTables = Collections.EMPTY_SET;
+		if(nodeIdsStateTable.isEmpty()) { // if state table is empty check for rep logic
+			String maxIntNodeid = "";
+			int maxIntSize = 0;
 
-
-	public static Socket getNodeWithUpdatedState(String recordId, Set<TableNames> reqTables) {
-		System.out.println("gettting node for record id " + recordId);
-		String nodeId = "";
-		if (stateTable.get(tableName) != null) { // if the record is present in state table return any node in the list
-			nodeId = stateTable.get(tableName).iterator().next();
-		} else { // if record has not been updated at all
-					// TODO implement logic to look up in local DB and other DCs
-			Iterator<String, Set<TableNames>> it = subscriberReplicaMap.iterator();
-			Set<TableNames> max = null;
-			while(it.hasNext()){
-				Entry<String, Set<TableNames>>entry = it.next();
-				Set<TableNames> intersection = reqTables.retainAll(entry.getValue());
-				if (max==null) {
-					max = intersection;
-					nodeId = entry.getKey();
-				}
-				else if (max.size() < intersection.size()) {
-					max = entry.getValue();
-					nodeId = entry.getKey();
+			for (Entry<String, Set<String>> entry: subscriberReplicaMap.entrySet()){
+				
+				Set<String> intersection = new HashSet<String>(tableNames);
+				intersection.retainAll(entry.getValue());
+				
+				if(intersection.size()> maxIntSize) {
+					maxIntSize = intersection.size();
+					maxIntNode = entry.getKey();
+					maxIntTables = entry.getValue();
 				}
 			}
-			reqTables.removeAll(max);
-			final Connection con = DatabaseConnection.getConnection();
-			StateTableOperationManager stateTableHandler = new StateTableOperationManager(con);
-			nodeId = stateTableHandler.readFromStateTable(tableName, "testtable");
-			nodeId = "testNodeId";
-			System.out.println("Node id received from the state table " + nodeId);
+		}else if(nodeIdsStateTable.size()>1) {
+			// TODO check for bandwidth between nodes
+			maxIntNode = nodeIdsStateTable.iterator().next();
+		}
+		tableNames.removeAll(maxIntTables);
+		requestRepTables(inputMessage, subscriberNodeSocketMap.get(maxIntNode), tableNames);
+		
+		if (subscriberNodeSocketMap.containsKey(maxIntNode)) {
+			System.out.println("Subscriber node map contains the " + maxIntNode);
+			Socket readNodeSocket = subscriberNodeSocketMap.get(maxIntNode);
+			return readNodeSocket;
+		}
+		return null;
+	}
+	
+	public static void requestRepTables(DBMessage inputMessage, Socket subSocket, Set<String> repTables){
+
+		ObjectMapper objMapper = new ObjectMapper();
+		DataOutputStream dos;
+		try {
+			dos = new DataOutputStream(subSocket.getOutputStream());
+			if (repTables.size()>0) {
+				inputMessage.setReqType(RequestType.REP_TABLES);
+				inputMessage.setTableNames(repTables);
+				dos.writeUTF(objMapper.writeValueAsString(inputMessage));
+
+			}else { // rep tables size <=0 no rep required
+				inputMessage.setReqType(RequestType.TPC_READ);
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.out.println("wrote Rep Request to subscriber");
+	}
+	public static Set<String> getMaxIntersection(List<Set<String>> nodeIdsTableWise) {
+		if(nodeIdsTableWise.size() ==0) {
+			return Collections.EMPTY_SET;
+		}
+		
+		Set<String> result = nodeIdsTableWise.get(0);
+		for(Set<String> nodeIdsPerTable: nodeIdsTableWise) {
+			result.retainAll(nodeIdsPerTable);			
+		}
+		return result;
+				
+	}
+
+	public static String[] cleanNodeId(String[] nodesIdSplit ) {
+		String[] nodesIdsClean = new String[nodesIdSplit.length];
+		for(int i=0; i<nodesIdSplit.length; i++ ) {
+			String nodeId = nodesIdSplit[i];
 			StringBuffer sb = new StringBuffer(nodeId);
 			sb.deleteCharAt(0);
 			nodeId = sb.toString();
 			nodeId = nodeId.replace("_", ":");
-			System.out.println("new Node id received from the state table " + nodeId);
+			nodesIdsClean[i] =nodeId;
 		}
-		if (subscriberNodeSocketMap.containsKey(nodeId)) {
-			System.out.println("Subscriber node map contains the " + nodeId);
-			Socket readNodeSocket = subscriberNodeSocketMap.get(nodeId);
-			return readNodeSocket;
-		}
-		return null;
+		return nodesIdsClean;
 	}
 
 	public synchronized static void updateAckMap(String ackMapkey, String nodeId) {
@@ -465,3 +516,120 @@ public class Publisher {
 	}
 
 }
+
+//public static Socket getNodeFromRepLogic(List<String> tableNames, String[] nodesIds) {
+//List<String> nodeIds = new ArrayList<String>();
+//
+//System.out.println("gettting node for record id " + recordId);
+//String nodeId = "";
+//if (stateTable.get(recordId) != null) { // if the record is present in state table return any node in the list
+//	nodeId = stateTable.get(recordId).iterator().next();
+//} else { // if record has not been updated at all
+//			// TODO implement logic to look up in local DB and other DCs
+////	Iterator<String, Set<TableNames>> it = subscriberReplicaMap.iterator();
+//	Set<TableNames> max = null;
+//	while(it.hasNext()){
+//		Entry<String, Set<TableNames>>entry = it.next();
+//		Set<TableNames> intersection = reqTables.retainAll(entry.getValue());
+//		if (max==null) {
+//			max = intersection;
+//			nodeId = entry.getKey();
+//		}
+//		else if (max.size() < intersection.size()) {
+//			max = entry.getValue();
+//			nodeId = entry.getKey();
+//		}
+//	}
+//	reqTables.removeAll(max);
+//	final Connection con = DatabaseConnection.getConnection();
+//	StateTableOperationManager stateTableHandler = new StateTableOperationManager(con);
+//	nodeId = stateTableHandler.readFromStateTable(recordId, "testtable");
+//	nodeId = "testNodeId";
+//	System.out.println("Node id received from the state table " + nodeId);
+//	StringBuffer sb = new StringBuffer(nodeId);
+//	sb.deleteCharAt(0);
+//	nodeId = sb.toString();
+//	nodeId = nodeId.replace("_", ":");
+//	System.out.println("new Node id received from the state table " + nodeId);
+//}
+//if (subscriberNodeSocketMap.containsKey(nodeId)) {
+//	System.out.println("Subscriber node map contains the " + nodeId);
+//	Socket readNodeSocket = subscriberNodeSocketMap.get(nodeId);
+//	return readNodeSocket;
+//}
+//
+//return null;
+//
+//return null;
+//
+//}
+//
+
+//public static Socket getNodeWithUpdatedState(List<String> tableName) {
+//System.out.println("gettting node for tableName " + tableName);
+//String nodeId = "";
+//if (stateTable.get(tableName) != null) { // if the record is present in state table return any node in the list
+//	nodeId = stateTable.get(tableName).iterator().next();
+//} else { // if record has not been updated at all
+//			// TODO implement logic to look up in local DB and other DCs
+//	final Connection con = DatabaseConnection.getConnection();
+//	StateTableOperationManager stateTableHandler = new StateTableOperationManager(con);
+//	nodeId = stateTableHandler.readFromStateTable(tableName, "testtable");
+//	nodeId = "testNodeId";
+//	System.out.println("Node id received from the state table " + nodeId);
+//	StringBuffer sb = new StringBuffer(nodeId);
+//	sb.deleteCharAt(0);
+//	nodeId = sb.toString();
+//	nodeId = nodeId.replace("_", ":");
+//	System.out.println("new Node id received from the state table " + nodeId);
+//}
+//if (subscriberNodeSocketMap.containsKey(nodeId)) {
+//	System.out.println("Subscriber node map contains the " + nodeId);
+//	Socket readNodeSocket = subscriberNodeSocketMap.get(nodeId);
+//	return readNodeSocket;
+//}
+//return null;
+//}
+
+//public static Socket getNodeWithUpdatedState(String recordId, Set<TableNames> reqTables) {
+//System.out.println("gettting node for record id " + recordId);
+//String nodeId = "";
+//if (stateTable.get(recordId) != null) { // if the record is present in state table return any node in the list
+//	nodeId = stateTable.get(recordId).iterator().next();
+//} else { // if record has not been updated at all
+//			// TODO implement logic to look up in local DB and other DCs
+//	Iterator<String, Set<TableNames>> it = subscriberReplicaMap.iterator();
+//	Set<TableNames> max = null;
+//	while(it.hasNext()){
+//		Entry<String, Set<TableNames>>entry = it.next();
+//		Set<TableNames> intersection = reqTables.retainAll(entry.getValue());
+//		if (max==null) {
+//			max = intersection;
+//			nodeId = entry.getKey();
+//		}
+//		else if (max.size() < intersection.size()) {
+//			max = entry.getValue();
+//			nodeId = entry.getKey();
+//		}
+//	}
+//	
+//	final Connection con = DatabaseConnection.getConnection();
+//	StateTableOperationManager stateTableHandler = new StateTableOperationManager(con);
+//	nodeId = stateTableHandler.readFromStateTable(recordId, "testtable");
+//	nodeId = "testNodeId";
+//	System.out.println("Node id received from the state table " + nodeId);
+//	StringBuffer sb = new StringBuffer(nodeId);
+//	sb.deleteCharAt(0);
+//	nodeId = sb.toString();
+//	nodeId = nodeId.replace("_", ":");
+//	System.out.println("new Node id received from the state table " + nodeId);
+//}
+//if (subscriberNodeSocketMap.containsKey(nodeId)) {
+//	System.out.println("Subscriber node map contains the " + nodeId);
+//	Socket readNodeSocket = subscriberNodeSocketMap.get(nodeId);
+//	return readNodeSocket;
+//}
+//
+//return null;
+//
+//}
