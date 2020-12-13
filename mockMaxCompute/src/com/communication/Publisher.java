@@ -45,6 +45,7 @@ public class Publisher {
 	public static volatile ConcurrentHashMap<String, Set<String>> ackMap = new ConcurrentHashMap<String, Set<String>>();
 	public static volatile ConcurrentHashMap<String, Set<String>> stateTable = new ConcurrentHashMap<String, Set<String>>();
 	public static ConcurrentHashMap<String, Socket> subscriberNodeSocketMap = new ConcurrentHashMap<String, Socket>();
+	public static ConcurrentHashMap<String, Set<TableNames>> subscriberReplicaMap = new ConcurrentHashMap<String, Set<TableNames>>;
 	public static int Nw = 2; // TODO remove hardcoding
 	public static volatile List<RequestStat> requestStats = new ArrayList<RequestStat>();
 
@@ -162,7 +163,6 @@ public class Publisher {
 							Thread.sleep(500);
 						}
 						DBMessage messageToPublish = inputMessages.poll();
-
 						Iterator<Map.Entry<String, Socket>> iterator = subscriberNodeSocketMap.entrySet().iterator();
 						System.out.println("Writing msg to subscribers");
 						while (iterator.hasNext()) {
@@ -234,7 +234,10 @@ public class Publisher {
 																// network
 
 						} else if (inputMessage.getReqType() == RequestType.READ) {
-
+							//check which tables it needs
+							reqTables = inputMessage.getTables();
+							readNode = getReadNode(reqTables);
+							//
 							Socket readTargetNodeSocket = getNodeWithUpdatedState(inputMessage.getRecordId());
 							if ( readTargetNodeSocket!= null) {
 								DataOutputStream dos = new DataOutputStream(readTargetNodeSocket.getOutputStream());
@@ -278,7 +281,9 @@ public class Publisher {
 
 						DBMessage inputMessage = objMapper.readValue(received, DBMessage.class);
 						int numNodes = subscriberNodeSocketMap.size();
-
+						if (inputMessage.getReqType() == RequestType.REP_TABLES){
+							subscriberReplicaMap.put(nodeSocket.getRemoteSocketAddress().toString(),inputMessage.getTables());
+						}
 						if (inputMessage.getReqType() == RequestType.ACK_INSERT
 								|| inputMessage.getReqType() == RequestType.ACK_DELETE
 								|| inputMessage.getReqType() == RequestType.ACK_EDIT) {
@@ -381,13 +386,28 @@ public class Publisher {
 		}
 	}
 
-	public static Socket getNodeWithUpdatedState(String recordId) {
+	public static Socket getNodeWithUpdatedState(String recordId, Set<TableNames> reqTables) {
 		System.out.println("gettting node for record id " + recordId);
 		String nodeId = "";
 		if (stateTable.get(recordId) != null) { // if the record is present in state table return any node in the list
 			nodeId = stateTable.get(recordId).iterator().next();
 		} else { // if record has not been updated at all
 					// TODO implement logic to look up in local DB and other DCs
+			Iterator<String, Set<TableNames>> it = subscriberReplicaMap.iterator();
+			Set<TableNames> max = null;
+			while(it.hasNext()){
+				Entry<String, Set<TableNames>>entry = it.next();
+				Set<TableNames> intersection = reqTables.retainAll(entry.getValue());
+				if (max==null) {
+					max = intersection;
+					nodeId = entry.getKey();
+				}
+				else if (max.size() < intersection.size()) {
+					max = intersection;
+					nodeId = entry.getKey();
+				}
+			}
+			reqTables.removeAll(intersection);
 			final Connection con = DatabaseConnection.getConnection();
 			StateTableOperationManager stateTableHandler = new StateTableOperationManager(con);
 			nodeId = stateTableHandler.readFromStateTable(recordId, "testtable");

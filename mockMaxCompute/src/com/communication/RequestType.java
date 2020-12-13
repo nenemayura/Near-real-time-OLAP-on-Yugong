@@ -9,5 +9,6 @@ public enum RequestType {
 	ACK_EDIT,
 	ACK_DELETE,
 	READ_RESPONSE,
-	TPC_READ
+	TPC_READ,
+	REP_TABLES //If the message from sub contains Set<TableNames> replicated 
 }
