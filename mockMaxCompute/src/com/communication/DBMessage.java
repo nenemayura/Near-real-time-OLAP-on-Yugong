@@ -24,6 +24,7 @@ public class DBMessage {
 	private Set<String> tableNames;
 	private long startTime;
 	private long endTime;
+	private Set<String> tablesToReplicate;
 
 	// TODO do we need time stamp here?
 	public DBMessage(RequestType reqType, String recordId, String record, String tableName, Set<String> tablesNamesSet) {
@@ -125,5 +126,11 @@ public class DBMessage {
 
 	public void setTableNames(Set<String> tableNames) {
 		this.tableNames = tableNames;
+	}
+		public Set<String> getTablesToReplicate() {
+		return tablesToReplicate;
+	}
+	public void setTablesToReplicate(Set<String> tablesToReplicate) {
+		this.tablesToReplicate = tablesToReplicate;
 	}
 }
