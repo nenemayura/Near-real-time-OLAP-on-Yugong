@@ -1,14 +1,14 @@
-package com.communication;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -21,12 +21,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import com.replication.DatabaseConnection;
-import com.stateTable.StateTableOperationManager;
+//import DatabaseConnection;
+//import StateTableOperationManager;
 
 public class Publisher {
 
@@ -38,16 +37,13 @@ public class Publisher {
 	static ServerSocket pubSocket;
 	static Socket pubSourceSocket;
 
-	static volatile Queue<DBMessage>  inputMessages = new LinkedList<DBMessage>();
-	public static volatile ConcurrentHashMap<String, Set<String>> ackMap = new ConcurrentHashMap<String, Set<String>>(); // no
-																															// of
-																															// acknowledgements
-																															// received
-																															// for
-																															// each
-																															// reqKey
+	static volatile Queue<DBMessage> inputMessages = new LinkedList<DBMessage>();
+	// No of acks received from each key
+	public static volatile ConcurrentHashMap<String, Set<String>> ackMap = new ConcurrentHashMap<String, Set<String>>();
 	public static volatile ConcurrentHashMap<String, Set<String>> stateTable = new ConcurrentHashMap<String, Set<String>>();
 	public static ConcurrentHashMap<String, Socket> subscriberNodeSocketMap = new ConcurrentHashMap<String, Socket>();
+	public static int Nw = 2; // TODO remove hardcoding
+	public static volatile List<RequestStat> requestStats = new ArrayList<RequestStat>();
 
 	// method to publish notification whenever DB entry is created
 	public static void main(String args[]) {
@@ -67,7 +63,8 @@ public class Publisher {
 		}
 		listenSource();
 		acceptSubscriptions();
-		publish(); //thread to broadcast msgs to subscribers
+		publish(); // thread to broadcast msgs to subscribers
+		writeStatsToFile(20000); // write to json every 1 min
 
 	}
 
@@ -91,11 +88,11 @@ public class Publisher {
 					try {
 						nodeSocket = pubSocket.accept();
 						String nodeKey = nodeSocket.getRemoteSocketAddress().toString();
-						System.out.println("nodeKey:"+ nodeKey);
-					
+						System.out.println("nodeKey:" + nodeKey);
+
 						subscriberNodeSocketMap.put(nodeKey, nodeSocket);
 						System.out.println("Accepted connection from subscriber");
-						
+
 						listenAck(nodeSocket);
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -104,14 +101,56 @@ public class Publisher {
 			}
 		};
 		acceptSubscriptions.start();
-		
+
 	}
 
+	public static void writeStatsToFile(int t) { // writeStatsToFile every t milliseconds
+		Thread writeLog = new Thread() {
+			public void run() {
+				BufferedWriter writer = null;
+				while (true) {
+					System.out.println("size of stats when checked:"+ requestStats.size());
+					if (requestStats.size() > 10) {
+						List<RequestStat> temp = new ArrayList<RequestStat>();
+						temp.addAll(requestStats);
+						
+						ObjectMapper objectMapper = new ObjectMapper();
+						try {
+							String statStr = objectMapper.writeValueAsString(requestStats);
+							requestStats = new ArrayList<RequestStat>();
+							writer = new BufferedWriter(new FileWriter("log_data.json", true));
+							writer.write(statStr);
+							System.out.println("wrote to file:"+ statStr);
 
-	public static void publish() { // publishes/broadcasts to all subscribers
+						} catch (IOException e) {
+							e.printStackTrace();
+						} finally {
+							try {
+								if (writer != null) {
+									writer.close();
+								}
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
+					} // end if
+					try {
+						Thread.sleep(t);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				} // end while
+			}
+
+		};
+		writeLog.start();
+	}
+
+	public static void publish() { // publishes or broadcasts to all subscribers
 		Thread publish = new Thread() {
 			public void run() {
-				System.out.println("Starting thread to publish messages to every node input messg size "+inputMessages.size());
+				System.out.println(
+						"Starting thread to publish messages to every node input messg size " + inputMessages.size());
 				while (true) {
 					try {
 						ObjectMapper objMapper = new ObjectMapper();
@@ -120,29 +159,29 @@ public class Publisher {
 							Thread.sleep(500);
 						}
 						DBMessage messageToPublish = inputMessages.poll();
-						
-						Iterator<Map.Entry<String, Socket> > iterator = subscriberNodeSocketMap.entrySet().iterator(); 
+
+						Iterator<Map.Entry<String, Socket>> iterator = subscriberNodeSocketMap.entrySet().iterator();
 						System.out.println("Writing msg to subscribers");
-						while (iterator.hasNext()) { 
-				            Entry<String, Socket> entry  = iterator.next(); 
-				            Socket nodeSocket = entry.getValue();
-				            
-				            try {
+						while (iterator.hasNext()) {
+							Entry<String, Socket> entry = iterator.next();
+							Socket nodeSocket = entry.getValue();
+
+							try {
 								DataOutputStream dos = new DataOutputStream(nodeSocket.getOutputStream());
 								dos.writeUTF(objMapper.writeValueAsString(messageToPublish));
-								System.out.println(" msg to subscribers .... "+messageToPublish);
+								System.out.println(" msg to subscribers .... " + messageToPublish);
 
-								}catch (Exception e) {
-									System.out.println("Exception while broadcasting, closing connection");
-									e.printStackTrace();
-									nodeSocket.close();
-									iterator.remove(); 
-								}
-				         }
+							} catch (Exception e) {
+								System.out.println("Exception while broadcasting, closing connection");
+								e.printStackTrace();
+								nodeSocket.close();
+								iterator.remove();
+							}
+						}
 					} catch (Exception e) {
 						System.out.println("Exception in publish thread");
 						e.printStackTrace();
-						
+
 					}
 				}
 			}
@@ -150,14 +189,6 @@ public class Publisher {
 		publish.start();
 	}
 
-//	public static DBMessage filterMessages(DBMessage dbMessage) {
-//		if (dbMessage.getReqType() == RequestType.READ) {
-//			return dbMessage;
-//		}
-//		return null;
-//
-//	}
-	// collect messages at publisher to a queue and keep sending them to subscriber
 
 	public static void listenSource() {
 
@@ -170,7 +201,6 @@ public class Publisher {
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
-				// TODO check if this while loop is required
 				while (true) { // loop because publisher needs to keep listening to the source all the time
 					DataInputStream dis;
 					try {
@@ -183,8 +213,12 @@ public class Publisher {
 						String received = dis.readUTF();
 
 						DBMessage inputMessage = objMapper.readValue(received, DBMessage.class);
-						
-						if(inputMessage.getReqType().equals(RequestType.TPC_READ)) {
+
+						Date date = new Date();
+						long startTime = date.getTime();
+						inputMessage.setStartTime(startTime);
+
+						if (inputMessage.getReqType().equals(RequestType.TPC_READ)) {
 							System.out.println("Added tpc read");
 
 							inputMessages.add(inputMessage);
@@ -193,17 +227,18 @@ public class Publisher {
 						if (inputMessage.getReqType() == RequestType.INSERT
 								|| inputMessage.getReqType() == RequestType.DELETE
 								|| inputMessage.getReqType() == RequestType.EDIT) {
-							inputMessages.add(inputMessage); // this queue broadcasts msgs to all subscribers in the network
+							inputMessages.add(inputMessage); // this queue broadcasts msgs to all subscribers in the
+																// network
 
 						} else if (inputMessage.getReqType() == RequestType.READ) {
 
 							Socket readTargetNodeSocket = getNodeWithUpdatedState(inputMessage.getRecordId());
-							if(null != readTargetNodeSocket) {
+							if ( readTargetNodeSocket!= null) {
 								DataOutputStream dos = new DataOutputStream(readTargetNodeSocket.getOutputStream());
 								dos.writeUTF(objMapper.writeValueAsString(inputMessage));
 								System.out.println("wrote messsage to subscriber");
 							}
-							
+
 						}
 
 					} catch (IOException e) {
@@ -216,12 +251,12 @@ public class Publisher {
 		};
 		listen.start();
 	}
-	
+
 	public static void listenAck(final Socket nodeSocket) {
 
 		Thread listenAck = new Thread() {
 			public void run() {
-				
+
 				while (true) { // loop because publisher needs to keep listening to the source all the time
 					DataInputStream dis;
 					try {
@@ -229,27 +264,32 @@ public class Publisher {
 
 						while (dis.available() < 1) {
 							Thread.sleep(500);
+//							long endTime = new Date().getTime();
+//							RequestStat reqStat = new RequestStat(endTime-10, endTime,
+//									"READ", true, 1, Nw, 3);
+//							requestStats.add(reqStat);
+//							System.out.println("Size of stats after adding:"+ requestStats.size());
 						}
 						ObjectMapper objMapper = new ObjectMapper();
 						String received = dis.readUTF();
 
 						DBMessage inputMessage = objMapper.readValue(received, DBMessage.class);
+						int numNodes = subscriberNodeSocketMap.size();
 
 						if (inputMessage.getReqType() == RequestType.ACK_INSERT
 								|| inputMessage.getReqType() == RequestType.ACK_DELETE
 								|| inputMessage.getReqType() == RequestType.ACK_EDIT) {
-							int Nw = 2; // TODO remove hardcoding
+
 							System.out.println("listening to ack");
 							String requestKey = inputMessage.getMessageKey();
-//							System.out.println(Thread.currentThread().getName()+ ": received  message from subscriber node:"+ inputMessage.getSenderId());
+
 							synchronized (this) {
-								
+
 								updateAckMap(requestKey, inputMessage.getSenderId());
-								
 								Set<String> senderNodes = ackMap.get(requestKey);
-								
+
 								int nAcks = senderNodes != null ? senderNodes.size() : 0;
-								
+
 								if (nAcks >= Nw) {
 									System.out.println("nAcks:" + nAcks + " nAcksReqd:" + Nw);
 
@@ -257,16 +297,25 @@ public class Publisher {
 									 * once the request is successful flush the ack entry from map to enable
 									 * processing request on same entry by same client
 									 **/
+									long endTime = new Date().getTime();
+									RequestStat reqStat = new RequestStat(inputMessage.getStartTime(), endTime,
+											inputMessage.getReqType().name(), true, 1, Nw, numNodes);
+									requestStats.add(reqStat);
 									populateStateTable(inputMessage.getTableName(), ackMap.get(requestKey));
 									updateDataBase(inputMessage.getTableName(), ackMap.get(requestKey));
 									flushKeyFromAckMap(requestKey);
-									
+
 									// TODO send response to user
 								}
 							}
 						} else if (inputMessage.getReqType().equals(RequestType.READ_RESPONSE)) {
-							System.out.println("Read response received "+inputMessage.getRecord());
+							System.out.println("Read response received " + inputMessage.getRecord());
+							long endTime = new Date().getTime();
+							RequestStat reqStat = new RequestStat(inputMessage.getStartTime(), endTime,
+									inputMessage.getReqType().name(), true, 1, Nw, numNodes);
+							requestStats.add(reqStat);
 						}
+						
 					} catch (IOException e) {
 						e.printStackTrace();
 						System.out.println("Exception occured, closing connection");
@@ -291,21 +340,22 @@ public class Publisher {
 		};
 		listenAck.start();
 	}
+
 	public static void populateStateTable(String tableName, Set<String> set) {
 		int maxStateTableSize = 1000;
-		
+
 		final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 		rwl.readLock().lock();
 		List<String> recordIds = new ArrayList<String>(stateTable.keySet());
 		rwl.readLock().unlock();
 
 		rwl.writeLock().lock();
-		if(recordIds.size()>maxStateTableSize) {
+		if (recordIds.size() > maxStateTableSize) {
 			stateTable.remove(recordIds.get(0));
 		}
 		stateTable.put(tableName, set);
 		updateDataBase(tableName, set);
-		
+
 		rwl.writeLock().unlock();
 		System.out.println("Updated state table with name:" + tableName + "entries:" + set);
 	}
@@ -317,42 +367,43 @@ public class Publisher {
 		try {
 			stmt = localConnection.createStatement();
 			String nodes = "";
-			for(String nodeId: set) {
-				nodes = nodes+","+ nodeId;
+			for (String nodeId : set) {
+				nodes = nodes + "," + nodeId;
 			}
-			stmt.executeUpdate("INSERT INTO statetable(id, tablename, nodes) VALUES('"+ 1+"','"+ tableName+"','" + nodes +"')"
-					+ "ON DUPLICATE KEY UPDATE nodes= '"+ nodes+"'"); 
+			stmt.executeUpdate("INSERT INTO statetable(id, tablename, nodes) VALUES('" + 1 + "','" + tableName + "','"
+					+ nodes + "')" + "ON DUPLICATE KEY UPDATE nodes= '" + nodes + "'");
 
 		} catch (SQLException e) {
-			System.out.println("Error while executing statement "+e);
+			System.out.println("Error while executing statement " + e);
 		}
 	}
-	
+
 	public static Socket getNodeWithUpdatedState(String recordId) {
-		System.out.println("gettting node for record id "+recordId);
+		System.out.println("gettting node for record id " + recordId);
 		String nodeId = "";
 		if (stateTable.get(recordId) != null) { // if the record is present in state table return any node in the list
 			nodeId = stateTable.get(recordId).iterator().next();
 		} else { // if record has not been updated at all
 					// TODO implement logic to look up in local DB and other DCs
-			final Connection con = com.replication.DatabaseConnection.getConnection();
+			final Connection con = DatabaseConnection.getConnection();
 			StateTableOperationManager stateTableHandler = new StateTableOperationManager(con);
 			nodeId = stateTableHandler.readFromStateTable(recordId, "testtable");
-			System.out.println("Node id received from the state table "+nodeId);
+			nodeId = "testNodeId";
+			System.out.println("Node id received from the state table " + nodeId);
 			StringBuffer sb = new StringBuffer(nodeId);
 			sb.deleteCharAt(0);
 			nodeId = sb.toString();
 			nodeId = nodeId.replace("_", ":");
-			System.out.println("new Node id received from the state table "+nodeId);
+			System.out.println("new Node id received from the state table " + nodeId);
 		}
 		if (subscriberNodeSocketMap.containsKey(nodeId)) {
-			System.out.println("Subscriber node map contains the "+nodeId);
+			System.out.println("Subscriber node map contains the " + nodeId);
 			Socket readNodeSocket = subscriberNodeSocketMap.get(nodeId);
 			return readNodeSocket;
 		}
-		
-			return null;
-		
+
+		return null;
+
 	}
 
 	public synchronized static void updateAckMap(String ackMapkey, String nodeId) {
@@ -373,7 +424,6 @@ public class Publisher {
 			ackMap.put(ackMapkey, ackNodes);
 			rwl.writeLock().unlock();
 		}
-//		System.out.println("updated ackmap," + ackMapkey + ":" + ackMap.get(ackMapkey));
 	}
 
 	public synchronized static void flushKeyFromAckMap(String ackMapkey) {
@@ -384,7 +434,7 @@ public class Publisher {
 			rwl.writeLock().lock();
 			ackMap.remove(ackMapkey);
 			rwl.writeLock().unlock();
-		}else {
+		} else {
 			rwl.readLock().unlock();
 		}
 		System.out.println("flushed key from ackmap," + ackMapkey);
