@@ -217,6 +217,7 @@ public class Publisher {
 						String received = dis.readUTF();
 
 						DBMessage inputMessage = objMapper.readValue(received, DBMessage.class);
+						System.out.println("Message received from source "+inputMessage.toString());
 
 						Date date = new Date();
 						long startTime = date.getTime();

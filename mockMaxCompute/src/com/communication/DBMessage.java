@@ -1,6 +1,15 @@
 package com.communication;
 
+import java.util.Set;
+
 public class DBMessage {
+	@Override
+	public String toString() {
+		return "DBMessage [reqType=" + reqType + ", recordId=" + recordId + ", record=" + record + ", senderId="
+				+ senderId + ", receiverId=" + receiverId + ", messageKey=" + messageKey + ", tableName=" + tableName
+				+ ", tableNames=" + tableNames + ", startTime=" + startTime + ", endTime=" + endTime + "]";
+	}
+
 	// TODO: Add script to convert update and insert lines to SQL queries
 	// Input: | separated entry
 	// Output: SQL query
@@ -12,15 +21,25 @@ public class DBMessage {
 	private String receiverId = "";
 	private String messageKey = "";
 	private String tableName;
+	private Set<String> tableNames;
 	private long startTime;
 	private long endTime;
 
 	// TODO do we need time stamp here?
+	public DBMessage(RequestType reqType, String recordId, String record, String tableName, Set<String> tablesNamesSet) {
+		this.recordId = recordId;
+		this.record = record;
+		this.reqType = reqType;
+		this.tableName = tableName;
+		this.tableNames = tablesNamesSet;
+		// TODO add query as per TTPC_H
+	}
 	public DBMessage(RequestType reqType, String recordId, String record, String tableName) {
 		this.recordId = recordId;
 		this.record = record;
 		this.reqType = reqType;
 		this.tableName = tableName;
+		//this.tableNames = tablesNamesSet;
 		// TODO add query as per TTPC_H
 	}
 
@@ -98,5 +117,13 @@ public class DBMessage {
 
 	public void setEndTime(long endTime) {
 		this.endTime = endTime;
+	}
+
+	public Set<String> getTableNames() {
+		return tableNames;
+	}
+
+	public void setTableNames(Set<String> tableNames) {
+		this.tableNames = tableNames;
 	}
 }

@@ -13,7 +13,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 
 public class DBMessageSource {
@@ -103,10 +105,13 @@ public class DBMessageSource {
 								while (readQueryScanner.hasNext() && readOffset<10) {
 									Query readQuery = new Query(RequestType.READ, readQueryScanner.next()+";");
 									//System.out.println(readQuery.getQuery());
-									DBMessage message = new DBMessage(RequestType.TPC_READ, "1", readQuery.getQuery(), "");
+									String queryString  = readQuery.getQuery();
+									Set<String> tableNames = getTableNames(queryString);
+									DBMessage message = new DBMessage(RequestType.TPC_READ, "1", readQuery.getQuery(), "", tableNames);
 									dos.writeUTF(objMapper.writeValueAsString(message));
 									System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
-									Thread.sleep(20000);
+									System.out.println("---------------------------");
+									Thread.sleep(5000);
 
 									readOffset++;
 								}
@@ -155,10 +160,31 @@ public class DBMessageSource {
 //						System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
 						
 					} catch (Exception e) {
-						System.out.println("Exception in message source thread");
+						System.out.println("Exception in message source thread "+e.getMessage());
 						//TODO close socket connection
 					}
 				//}
+			}
+
+			private Set<String> getTableNames(String queryString) {
+				Set<String> tableNames = new HashSet<String>();
+				
+			
+				try {
+					int firstIndex = queryString.indexOf(":");
+				    int lastIndex = queryString.lastIndexOf(":");
+				    String sub = queryString.substring(firstIndex+1, lastIndex);
+				    System.out.println("new substring "+sub );
+				    String[] arr = sub.split(",");
+				    for(int i = 0; i < arr.length; ++i){
+				    tableNames.add(arr[i]);
+				    }
+				    System.out.println("new tableNames "+tableNames );
+				} catch (Exception e) {
+					System.out.println("Table name not found "+e.getMessage());
+				}
+				
+				return tableNames;
 			}
 		};
 		send.start();
