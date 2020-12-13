@@ -237,7 +237,7 @@ public class Publisher {
 
 						} else if (inputMessage.getReqType() == RequestType.READ) {
 
-							Socket readTargetNodeSocket = getNodeWithUpdatedState(inputMessage.getRecordId());
+							Socket readTargetNodeSocket = getNodeWithUpdatedState(inputMessage.                            ());
 							if ( readTargetNodeSocket!= null) {
 								DataOutputStream dos = new DataOutputStream(readTargetNodeSocket.getOutputStream());
 								dos.writeUTF(objMapper.writeValueAsString(inputMessage));
@@ -383,16 +383,16 @@ public class Publisher {
 		}
 	}
 
-	public static Socket getNodeWithUpdatedState(String recordId) {
-		System.out.println("gettting node for record id " + recordId);
+	public static Socket getNodeWithUpdatedState(String tableName) {
+		System.out.println("gettting node for tableName " + tableName);
 		String nodeId = "";
-		if (stateTable.get(recordId) != null) { // if the record is present in state table return any node in the list
-			nodeId = stateTable.get(recordId).iterator().next();
+		if (stateTable.get(tableName) != null) { // if the record is present in state table return any node in the list
+			nodeId = stateTable.get(tableName).iterator().next();
 		} else { // if record has not been updated at all
 					// TODO implement logic to look up in local DB and other DCs
 			final Connection con = DatabaseConnection.getConnection();
 			StateTableOperationManager stateTableHandler = new StateTableOperationManager(con);
-			nodeId = stateTableHandler.readFromStateTable(recordId, "testtable");
+			nodeId = stateTableHandler.readFromStateTable(tableName, "testtable");
 			nodeId = "testNodeId";
 			System.out.println("Node id received from the state table " + nodeId);
 			StringBuffer sb = new StringBuffer(nodeId);
@@ -406,9 +406,7 @@ public class Publisher {
 			Socket readNodeSocket = subscriberNodeSocketMap.get(nodeId);
 			return readNodeSocket;
 		}
-
 		return null;
-
 	}
 
 	public synchronized static void updateAckMap(String ackMapkey, String nodeId) {
