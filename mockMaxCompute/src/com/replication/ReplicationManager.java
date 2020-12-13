@@ -22,28 +22,28 @@ import com.constants.DatabaseConstants;
  */
 public class ReplicationManager {
 	private TableName[] replicatedTables;
+	private Connection localConnection;
 	/**
 	 * @param args - IP of the remote DB and tables to be copied
 	 */
-// TODO Add inout arguments IP and table name to be copied
-	public static void main(String[] args) {
+//	public static void main(String[] args) {
+			public ReplicationManager() {
+				// get local connection
 
-		// get local connection
-		
-		Connection localConnection = DatabaseConnection.getConnection();
-		
+				this.localConnection = DatabaseConnection.getConnection();
+			}
 		// get remote connection
-		Connection remoteConnection = getRemoteDatabaseConnection();
-		
-		// select from local
-		
-		ResultSet rs = selectDataFromLocalDatabase(localConnection);
-		
-		// insert into remote
-		replicateDataToRemote(remoteConnection, rs, tableName);
-
-		//delete from local
-		deleteReplicatedTables();
+//		Connection remoteConnection = getRemoteDatabaseConnection();
+//
+//		// select from local
+//
+//		ResultSet rs = selectDataFromLocalDatabase(localConnection);
+//
+//		// insert into remote
+//		replicateDataToRemote(remoteConnection, rs, tableName);
+//
+//		//delete from local
+//		deleteReplicatedTables();
 	}
 	private static void replicateDataToRemote(Connection remoteConnection, ResultSet rs, TableName tableName) {
 		try {
@@ -91,9 +91,9 @@ public class ReplicationManager {
 		return rs;  
 	}
 
-	private static Connection getRemoteDatabaseConnection() {
+	private static Connection getRemoteDatabaseConnection(String remoteIp) {
 		
-		String remoteUrl = "jdbc:mysql://10.32.102.43:3306/testdatabase?characterEncoding=latin1";
+		String remoteUrl = "jdbc:mysql://"+remoteIp"+:3306/tpch?characterEncoding=latin1";
 		System.out.println("Connecting remote database...");
 		Connection remoteConnection = null;
 		try { 
