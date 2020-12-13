@@ -1,4 +1,4 @@
-
+package com.communication;
 public class RequestStat {
 
 	long startTime = 0;
