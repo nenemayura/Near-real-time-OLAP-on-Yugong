@@ -10,7 +10,8 @@ import java.net.Socket;
 
 
 public class Subscriber {
-	
+	public static replicatedTables;
+	public static ReplicationManager replicationManager= new ReplicationManager();;
 	public static Socket subToPubSocket;
     static String pubSvrIp = "localhost";
     static int port_listen_to = 5432;
@@ -34,8 +35,8 @@ public class Subscriber {
 			public void run() {
 				while(true) {
 					try {
-						ReplicationManager replicationManager = new ReplicationManager();
-						replicationManager.deleteReplicatedTables();
+
+						this.replicationManager.deleteReplicatedTables();
 						
 							Thread.sleep(30000);
 						} catch (Exception e) {

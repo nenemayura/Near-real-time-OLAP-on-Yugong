@@ -162,25 +162,25 @@ public class Publisher {
 							Thread.sleep(500);
 						}
 						DBMessage messageToPublish = inputMessages.poll();
-
-						Iterator<Map.Entry<String, Socket>> iterator = subscriberNodeSocketMap.entrySet().iterator();
+						//TODO Decide which subscriber to send -- c
+//						Iterator<Map.Entry<String, Socket>> iterator = subscriberNodeSocketMap.entrySet().iterator();
 						System.out.println("Writing msg to subscribers");
-						while (iterator.hasNext()) {
-							Entry<String, Socket> entry = iterator.next();
-							Socket nodeSocket = entry.getValue();
-
-							try {
-								DataOutputStream dos = new DataOutputStream(nodeSocket.getOutputStream());
-								dos.writeUTF(objMapper.writeValueAsString(messageToPublish));
-								System.out.println(" msg to subscribers .... " + messageToPublish);
-
-							} catch (Exception e) {
-								System.out.println("Exception while broadcasting, closing connection");
-								e.printStackTrace();
-								nodeSocket.close();
-								iterator.remove();
-							}
-						}
+//						while (iterator.hasNext()) {
+//							Entry<String, Socket> entry = iterator.next();
+//							Socket nodeSocket = entry.getValue();
+//
+//							try {
+//								DataOutputStream dos = new DataOutputStream(nodeSocket.getOutputStream());
+//								dos.writeUTF(objMapper.writeValueAsString(messageToPublish));
+//								System.out.println(" msg to subscribers .... " + messageToPublish);
+//
+//							} catch (Exception e) {
+//								System.out.println("Exception while broadcasting, closing connection");
+//								e.printStackTrace();
+//								nodeSocket.close();
+//								iterator.remove();
+//							}
+//						}
 					} catch (Exception e) {
 						System.out.println("Exception in publish thread");
 						e.printStackTrace();

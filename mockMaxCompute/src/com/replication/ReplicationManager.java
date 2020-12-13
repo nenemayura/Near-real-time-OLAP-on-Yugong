@@ -137,5 +137,12 @@ public class ReplicationManager {
 
 		}
 	}
+	public List<TableName> getReplicatedTables() {
+		return replicatedTables;
+	}
+
+	public void setReplicatedTables(List<TableName> replicatedTables) {
+		this.replicatedTables = replicatedTables;
+	}
 
 }

@@ -24,6 +24,9 @@
   <component name="ChangeListManager">
     <list default="true" id="bb1b4e30-9db1-4bfc-92a9-92cb7441ed34" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/communication/Publisher.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/communication/Publisher.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/communication/Subscriber.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/communication/Subscriber.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/replication/ReplicationManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/replication/ReplicationManager.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -99,6 +102,10 @@
       <screen x="0" y="0" width="1280" height="680" />
     </state>
     <state x="96" y="0" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1280.680@0.0.1280.680" timestamp="1607562535303" />
+    <state x="446" y="25" key="#com.intellij.ide.util.MemberChooser" timestamp="1607823215242">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="446" y="25" key="#com.intellij.ide.util.MemberChooser/0.0.1280.680@0.0.1280.680" timestamp="1607823215242" />
     <state x="371" y="130" key="#com.intellij.ide.util.TreeClassChooserDialog" timestamp="1607562532450">
       <screen x="0" y="0" width="1280" height="680" />
     </state>
