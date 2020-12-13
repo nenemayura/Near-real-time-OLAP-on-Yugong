@@ -47,7 +47,7 @@ public class DBMessageSource {
 					publisherSocket = sourceToPubSocket.accept();
 
 				} catch (IOException e1) {
-					System.out...Trace();
+					System.out.println("exception "+e1.getMessage());
 				}
 				System.out.println("Starting thread at message source to send messages to publisher");
 				//while (true) {
@@ -106,7 +106,7 @@ public class DBMessageSource {
 									DBMessage message = new DBMessage(RequestType.TPC_READ, "1", readQuery.getQuery(), "");
 									dos.writeUTF(objMapper.writeValueAsString(message));
 									System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
-									Thread.sleep(10000);
+									Thread.sleep(20000);
 
 									readOffset++;
 								}

@@ -1,3 +1,5 @@
+package com.communication;
+
 public class DBMessage {
 	// TODO: Add script to convert update and insert lines to SQL queries
 	// Input: | separated entry

@@ -1,7 +1,7 @@
 package com.communication;
 import com.dbOperations.DBOperationManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import com.replication.ReplicationManager;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -25,6 +25,28 @@ public class Subscriber {
 			}
 		}
 		subscribe(port_listen_to);
+		deleteTables();
+	}
+
+
+	public static void deleteTables() {
+		Thread deleteTablesThread = new Thread() {
+			public void run() {
+				while(true) {
+					try {
+						ReplicationManager replicationManager = new ReplicationManager();
+						replicationManager.deleteReplicatedTables();
+						
+							Thread.sleep(30000);
+						} catch (Exception e) {
+							System.out.println("Exception occured while deleting tables "+e.getMessage());
+						}
+					}
+				}
+		
+		};
+		deleteTablesThread.start();
+		
 	}
 
 
@@ -44,7 +66,7 @@ public class Subscriber {
 					while(true) {
 							
 						while (disSubFromPub.available() < 1) {
-							Thread.sleep(100);
+							Thread.sleep(1000);
 						}
 						String received = disSubFromPub.readUTF();
 						System.out.println("Received "+received+" at subscriber ");
@@ -57,6 +79,11 @@ public class Subscriber {
 						if(messageReceived.getReqType().equals(RequestType.TPC_READ)) {
 							result = dbOperationManager.processTpcRead(messageReceived.getRecord());
 							System.out.println("The result receivd is "+result);
+							response.setReqType(RequestType.READ_RESPONSE);
+							response.setRecord(result);
+							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
+							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
+							System.out.println("Wrote response  to publisher  "+result);
 						} else if(messageReceived.getReqType().equals(RequestType.INSERT) ) {
 							response.setReqType(RequestType.ACK_INSERT);
 							response.setRecordId(messageReceived.getRecordId());
@@ -76,6 +103,7 @@ public class Subscriber {
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
 							System.out.println("Wrote response  to publisher  "+result);
 						}
+						Thread.sleep(10000);
 						//TODO read from table in DB
 //						DBMessage response = messageReceived;
 //						if(response!= null) {

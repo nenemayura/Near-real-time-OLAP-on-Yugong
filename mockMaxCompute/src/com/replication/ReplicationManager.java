@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.communication.TableName;
 import com.constants.DatabaseConstants;
 
 /**
@@ -21,31 +22,40 @@ import com.constants.DatabaseConstants;
  *
  */
 public class ReplicationManager {
-	private TableName[] replicatedTables;
+
+	private List<TableName> replicatedTables;
 	private Connection localConnection;
 	/**
 	 * @param args - IP of the remote DB and tables to be copied
 	 */
-//	public static void main(String[] args) {
-			public ReplicationManager() {
-				// get local connection
 
-				this.localConnection = DatabaseConnection.getConnection();
-			}
+// TODO Add inout arguments IP and table name to be copied
+	//public static void main(String[] args) {
+
+		// get local connection
+	public ReplicationManager() {
+		this.replicatedTables = new ArrayList();
+		this.localConnection = DatabaseConnection.getConnection();
+
+	}
+		
+		
 		// get remote connection
 //		Connection remoteConnection = getRemoteDatabaseConnection();
-//
+//		
 //		// select from local
-//
+//		
 //		ResultSet rs = selectDataFromLocalDatabase(localConnection);
-//
+//		
+
 //		// insert into remote
 //		replicateDataToRemote(remoteConnection, rs, tableName);
 //
 //		//delete from local
 //		deleteReplicatedTables();
-	}
-	private static void replicateDataToRemote(Connection remoteConnection, ResultSet rs, TableName tableName) {
+
+	//}
+	public  void replicateDataToRemote(Connection remoteConnection, ResultSet rs, TableName tableName) {
 		try {
 			System.out.println("Replicating data to remote");
 			ResultSetMetaData meta = rs.getMetaData();
@@ -67,7 +77,7 @@ public class ReplicationManager {
 		        replicationQuery.addBatch();
 		        }
 		   replicationQuery.executeBatch();
-			relicatedTables.add(tableName);
+			this.replicatedTables.add(tableName);
 		   System.out.println("Data replicated");
 
 		} catch (SQLException e) {
@@ -112,12 +122,13 @@ public class ReplicationManager {
 		return remoteConnection;
 	}
 
-	public static void deleteReplicatedTables(){
+	public void deleteReplicatedTables(){
+		System.out.println("Deleting replicated tables");
 		for (TableName t:replicatedTables){
-			deleteQuery = "DROP TABLE "+t.name()";";
+			String deleteQuery = "DROP TABLE "+t.name()+";";
 			try {
-				stmt = localConnection.createStatement();
-				rs =stmt.executeQuery(deleteQuery);
+				Statement stmt = this.localConnection.createStatement();
+				ResultSet rs = stmt.executeQuery(deleteQuery);
 				System.out.println("Successfully deleted table "+t.name());
 
 			} catch (SQLException e) {
