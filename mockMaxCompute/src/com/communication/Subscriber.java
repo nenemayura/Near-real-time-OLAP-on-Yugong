@@ -6,11 +6,12 @@ import com.replication.ReplicationManager;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
+import java.util.List;
 
 
 
 public class Subscriber {
-	public static replicatedTables;
+	public static List<String>replicatedTables;
 	public static ReplicationManager replicationManager= new ReplicationManager();;
 	public static Socket subToPubSocket;
     static String pubSvrIp = "localhost";
@@ -36,7 +37,7 @@ public class Subscriber {
 				while(true) {
 					try {
 
-						this.replicationManager.deleteReplicatedTables();
+						replicationManager.deleteReplicatedTables();
 						
 							Thread.sleep(30000);
 						} catch (Exception e) {

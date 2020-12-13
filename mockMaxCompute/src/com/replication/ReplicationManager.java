@@ -103,7 +103,7 @@ public class ReplicationManager {
 
 	private static Connection getRemoteDatabaseConnection(String remoteIp) {
 		
-		String remoteUrl = "jdbc:mysql://"+remoteIp"+:3306/tpch?characterEncoding=latin1";
+		String remoteUrl = "jdbc:mysql://"+remoteIp+":3306/tpch?characterEncoding=latin1";
 		System.out.println("Connecting remote database...");
 		Connection remoteConnection = null;
 		try { 
