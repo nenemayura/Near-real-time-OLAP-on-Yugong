@@ -122,6 +122,16 @@ public class DBMessageSource {
 									readQueryScanner = new Scanner(readQueriesFile).useDelimiter(";");
 									break;
 								}
+								
+								// adding consistency query
+								
+								String consistencyQuery = "Select SUM(totalprice) as consistencySum from orders;";
+								DBMessage message = new DBMessage(RequestType.CONSISTENCY_CHECK, "1", consistencyQuery, "");
+								dos.writeUTF(objMapper.writeValueAsString(message));
+								System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
+								
+								
+								
 //								if (updateQueryScanner.hasNextLine()){
 //									Query updateQuery = new Query(RequestType.EDIT,updateQueryScanner.nextLine(),TableName.customer);
 //									System.out.println(updateQuery.getQuery());

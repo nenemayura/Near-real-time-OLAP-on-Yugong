@@ -1,6 +1,7 @@
 package com.dbOperations;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -184,6 +185,26 @@ public class DBOperationManager {
 			}
 			
 			return result.toString();
+		}
+
+		public String processConsistencyQuery(String query) {
+			String result = "";
+			ResultSet rs = null;
+			PreparedStatement ps = null;
+			System.out.println("Executing tpc consistency  "+query);
+			try {
+				ps = localDbConnection.prepareStatement(query);
+			
+				rs = ps.executeQuery(query);
+				while(rs.next()) {
+				result  = rs.getString("consistencySum");	
+				}
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			return result;
 		}
 
 }

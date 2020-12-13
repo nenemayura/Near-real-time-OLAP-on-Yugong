@@ -26,8 +26,16 @@ public class DBMessage {
 	private long startTime;
 	private long endTime;
 	private Set<String> tablesToReplicate;
+	private Set<String> consistencyNodes;
 
 
+
+	public Set<String> getConsistencyNodes() {
+		return consistencyNodes;
+	}
+	public void setConsistencyNodes(Set<String> consistencyNodes) {
+		this.consistencyNodes = consistencyNodes;
+	}
 
 	private Set<String> replicatedTables; //tables that have already been replicated
 	

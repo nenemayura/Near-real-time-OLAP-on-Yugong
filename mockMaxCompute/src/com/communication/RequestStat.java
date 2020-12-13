@@ -8,7 +8,7 @@ public class RequestStat {
 	int readQ = 0;
 	int writeQ = 0;
 	int numNodes = 0;
-
+	float inConsistencyCount = 0.0f;
 	public RequestStat(long startTime, long endTime, String requestType, boolean processed, int readQ, int writeQ,
 			int numNodes) {
 		super();
@@ -19,6 +19,17 @@ public class RequestStat {
 		this.readQ = readQ;
 		this.writeQ = writeQ;
 		this.numNodes = numNodes;
+	}
+	
+	public RequestStat(long startTime, long endTime, String requestType, boolean processed, 
+			int numNodes, float inConsistencyCount) {
+		super();
+		this.startTime = startTime;
+		this.endTime = endTime;
+		this.requestType = requestType;
+		this.processed = processed;
+		this.numNodes = numNodes;
+		this.inConsistencyCount = inConsistencyCount;
 	}
 
 	public long getStartTime() {

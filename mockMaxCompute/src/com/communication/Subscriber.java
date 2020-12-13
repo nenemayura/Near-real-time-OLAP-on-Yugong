@@ -132,6 +132,14 @@ public class Subscriber {
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
 							System.out.println("Wrote response  to publisher  "+result);
+						} else if(messageReceived.getReqType().equals(RequestType.CONSISTENCY_CHECK)) {
+							result = dbOperationManager.processConsistencyQuery(messageReceived.getRecord());
+							response.setRecord(result);
+							response.setReqType(RequestType.ACK_CONSISTENCY_CHECK);
+							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
+							response.setConsistencyNodes(messageReceived.getConsistencyNodes());
+							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
+							System.out.println("Wrote response  to publisher  "+result);
 						}
 						Thread.sleep(10000);
 						//TODO read from table in DB

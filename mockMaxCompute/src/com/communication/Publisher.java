@@ -51,6 +51,7 @@ public class Publisher {
 	public static int Nw = 2; // TODO remove hardcoding
 	public static volatile List<RequestStat> requestStats = new ArrayList<RequestStat>();
 	public static ConcurrentHashMap<String, Set<String>> subscriberReplicaMap = new ConcurrentHashMap<String, Set<String>>();
+	public static volatile ConcurrentHashMap<String, String> consistencyMap = new ConcurrentHashMap<String, String>();
 
 
 	// method to publish notification whenever DB entry is created
@@ -248,6 +249,25 @@ public class Publisher {
 								System.out.println("wrote messsage to subscriber");
 							}
 
+						} else if (inputMessage.getReqType() == RequestType.CONSISTENCY_CHECK) {
+							Set<String> nodeId = new HashSet();
+							for(Map.Entry<String, Set<String>> entry : subscriberReplicaMap.entrySet()) {
+								Set<String> tableSet = entry.getValue();
+								if(tableSet.contains("orders")) {
+									nodeId.add(entry.getKey());
+								}
+							}
+							inputMessage.setConsistencyNodes(nodeId);
+							Iterator<String> itr = nodeId.iterator();
+							while(itr.hasNext()) {
+								String node = itr.next();
+								System.out.println("Node is ... consistency chck q...  "+node);
+								if(subscriberNodeSocketMap.contains(node)) {
+									Socket nodeSocket = subscriberNodeSocketMap.get(node);
+									DataOutputStream dos = new DataOutputStream(nodeSocket.getOutputStream());
+									dos.writeUTF(objMapper.writeValueAsString(inputMessage));
+								}
+							}
 						}
 
 					} catch (IOException e) {
@@ -325,6 +345,27 @@ public class Publisher {
 							RequestStat reqStat = new RequestStat(inputMessage.getStartTime(), endTime,
 									inputMessage.getReqType().name(), true, 1, Nw, numNodes);
 							requestStats.add(reqStat);
+						} else if (inputMessage.getReqType().equals(RequestType.ACK_CONSISTENCY_CHECK)) {
+							String requestKey = inputMessage.getMessageKey();
+							float inConsistencyCount = 0.0f;
+							synchronized (this) {
+
+								updateAckMap(requestKey, inputMessage.getSenderId());
+								Set<String> consistencyNodes = ackMap.get(requestKey);
+								// record means the value of sum function on order table
+								consistencyMap.put(inputMessage.getSenderId(), inputMessage.getRecord());
+								int nAcks = consistencyNodes != null ? consistencyNodes.size() : 0;
+								if(nAcks == inputMessage.getConsistencyNodes().size()) {
+									inConsistencyCount = getInconsistencyCount();
+									flushKeyFromAckMap(requestKey);
+								}
+								
+							}
+							long endTime = new Date().getTime();
+
+							RequestStat reqStat = new RequestStat(inputMessage.getStartTime(), endTime,
+									inputMessage.getReqType().name(), true, numNodes, inConsistencyCount);
+							requestStats.add(reqStat);
 						}
 						
 					} catch (IOException e) {
@@ -350,6 +391,18 @@ public class Publisher {
 			}
 		};
 		listenAck.start();
+	}
+
+	protected static float getInconsistencyCount() {
+		
+		Set<String> valuesSet = new HashSet();
+		for(String value : consistencyMap.values()) {
+			valuesSet.add(value);
+		}
+		
+		float consistencyRatio = (float) valuesSet.size() / (float) consistencyMap.size();
+		consistencyMap.clear();
+		return consistencyRatio;
 	}
 
 	public static void populateStateTable(String tableName, Set<String> set) {
@@ -504,14 +557,7 @@ public class Publisher {
 		}
 		return nodesIdsClean;
 	}
-//	public synchronized static void requestRepTables(Socket subSocket, Set<String> repTables){
-//		if (repTables.size()<1)
-//			return;
-//		DBMessage repRequest = new DBMessage();
-//		repRequest.setReqType(RequestType.REP_TABLES);
-//		repRequest.setTableNames(repTables);
-//
-//	}
+
 	public synchronized static void updateAckMap(String ackMapkey, String nodeId) {
 		final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 		rwl.readLock().lock();
