@@ -122,7 +122,8 @@ public class Publisher {
 							String statStr = objectMapper.writeValueAsString(requestStats);
 							requestStats = new ArrayList<RequestStat>();
 							writer = new BufferedWriter(new FileWriter("log_data.json", true));
-							writer.write(statStr);
+							writer.write(statStr+"\n");
+							writer.close();
 							System.out.println("wrote to file:"+ statStr);
 
 						} catch (IOException e) {
