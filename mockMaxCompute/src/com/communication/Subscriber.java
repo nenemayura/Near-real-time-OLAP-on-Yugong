@@ -38,6 +38,8 @@ public class Subscriber {
 
 	public static void deleteTables() {
 		ReplicationManager replicationManager = new ReplicationManager();
+		List<String> namesList = Arrays.asList( "customer", "lineitem", "nation","orders","part","partsupp","region","supplier");
+		replicatedTables.addAll(namesList);
 		Thread deleteTablesThread = new Thread() {
 			public void run() {
 				while(true) {
