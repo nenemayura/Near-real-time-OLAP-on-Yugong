@@ -98,7 +98,8 @@ public class Subscriber {
 							System.out.println("The result receivd is "+result);
 							response.setReqType(RequestType.READ_RESPONSE);
 							response.setRecord(result);
-							response.setReplicatedTables(new HashSet<String>(replicatedTables));
+							new Set<String> allTablesInSub = new HashSet<String>(replicatedTables).addAll((namesList));
+							response.setReplicatedTables(allTablesInSub);
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
 							System.out.println("Wrote response  to publisher  "+result);
@@ -137,7 +138,7 @@ public class Subscriber {
 							result = dbOperationManager.processTpcRead(messageReceived.getRecord());
 							System.out.println("The result receivd is "+result);
 							response.setReqType(RequestType.REP_TABLES);
-							new Set<String> allTablesInSub = new HashSet<String>(replicatedTables).addAll(new HashSet<String>(namesList));
+							new Set<String> allTablesInSub = new HashSet<String>(replicatedTables).addAll((namesList));
 							response.setReplicatedTables(allTablesInSub);
 							response.setRecord(result);
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
@@ -149,8 +150,8 @@ public class Subscriber {
 							response.setReqType(RequestType.ACK_CONSISTENCY_CHECK);
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							response.setConsistencyNodes(messageReceived.getConsistencyNodes());
-							Set<String> allTablesInSub = new HashSet<String>(replicatedTables).addAll(namesList);
-							response.setReplicatedTables(new HashSet<String>(replicatedTables));
+							new Set<String> allTablesInSub = new HashSet<String>(replicatedTables).addAll((namesList));
+							response.setReplicatedTables(allTablesInSub);
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
 							System.out.println("Wrote response  to publisher  "+result);
 						}
