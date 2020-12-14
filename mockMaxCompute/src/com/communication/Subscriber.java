@@ -8,6 +8,8 @@ import java.io.DataOutputStream;
 import java.net.Socket;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -16,13 +18,15 @@ import java.util.Map;
 
 
 public class Subscriber {
-	public static List<String>replicatedTables;
+	public static List<String>replicatedTables = new ArrayList<String>();
 	public static Socket subToPubSocket;
     static String pubSvrIp = "localhost";
     static int port_listen_to = 5432;
    
 	
 	public static void main(String args[]) {
+		List<String> namesList = Arrays.asList( "customer", "lineitem", "nation","orders","part","partsupp","region","supplier");
+		replicatedTables.addAll(namesList);
 		if(args.length >0 ) {
 			if(args[0]!= null) {
 				pubSvrIp = args[0];
@@ -32,14 +36,13 @@ public class Subscriber {
 			}
 		}
 		subscribe(port_listen_to);
-		deleteTables();
+	//	deleteTables();
 	}
 
 
 	public static void deleteTables() {
 		ReplicationManager replicationManager = new ReplicationManager();
-		List<String> namesList = Arrays.asList( "customer", "lineitem", "nation","orders","part","partsupp","region","supplier");
-		replicatedTables.addAll(namesList);
+
 		Thread deleteTablesThread = new Thread() {
 			public void run() {
 				while(true) {
@@ -47,9 +50,9 @@ public class Subscriber {
 
 						replicationManager.deleteReplicatedTables(replicatedTables);
 						
-							Thread.sleep(30000);
+							Thread.sleep(60000);
 						} catch (Exception e) {
-							System.out.println("Exception occured while deleting tables "+e.getMessage());
+							System.out.println("Exception occured while deleting tables "+e);
 						}
 					}
 				}
@@ -83,14 +86,18 @@ public class Subscriber {
 						
 						DBMessage messageReceived = objMapper.readValue(received, DBMessage.class);
 						DBOperationManager dbOperationManager = new DBOperationManager();
-						String result = dbOperationManager.processMessageRequest(messageReceived);
+						String result = "";
+						//String result = dbOperationManager.processMessageRequest(messageReceived);
 						System.out.println("msg received  "+messageReceived);
 						DBMessage response = new DBMessage();
+						response.setStartTime(messageReceived.getStartTime());
+
 						if(messageReceived.getReqType().equals(RequestType.TPC_READ)) {
 							result = dbOperationManager.processTpcRead(messageReceived.getRecord());
 							System.out.println("The result receivd is "+result);
 							response.setReqType(RequestType.READ_RESPONSE);
 							response.setRecord(result);
+							response.setReplicatedTables(new HashSet<String>(replicatedTables));
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
 							System.out.println("Wrote response  to publisher  "+result);
@@ -140,6 +147,7 @@ public class Subscriber {
 							response.setReqType(RequestType.ACK_CONSISTENCY_CHECK);
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							response.setConsistencyNodes(messageReceived.getConsistencyNodes());
+							response.setReplicatedTables(new HashSet<String>(replicatedTables));
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
 							System.out.println("Wrote response  to publisher  "+result);
 						}

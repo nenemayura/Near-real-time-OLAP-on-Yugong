@@ -57,7 +57,7 @@ public class DBMessageSource {
 					try {
         				ObjectMapper objMapper = new ObjectMapper();
 						DataOutputStream dos = new DataOutputStream(publisherSocket.getOutputStream());
-
+						Thread.sleep(10000);
         				
 //        				DBMessage message = new DBMessage(RequestType.READ, "1", "");
 //						dos.writeUTF(objMapper.writeValueAsString(message));
@@ -99,23 +99,33 @@ public class DBMessageSource {
 //							}
 
 							int readOffset = 0;
+							int temp = 0;
 
 
 							while(true){
 
 								while (readQueryScanner.hasNext() && readOffset<10) {
-									Query readQuery = new Query(RequestType.READ, readQueryScanner.next()+";");
-									//System.out.println(readQuery.getQuery());
-									String queryString  = readQuery.getQuery();
-									Set<String> tableNames = getTableNames(queryString);
-									DBMessage message = new DBMessage(RequestType.TPC_READ, "1", readQuery.getQuery(), "", tableNames);
-									dos.writeUTF(objMapper.writeValueAsString(message));
-									System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
-									System.out.println("---------------------------");
-									Thread.sleep(5000);
+									
+										Query readQuery = new Query(RequestType.READ, readQueryScanner.next()+";");
+										//System.out.println(readQuery.getQuery());
+										String queryString  = readQuery.getQuery();
+										if(!queryString.equals("\n;")) {
+											Set<String> tableNames = getTableNames(queryString);
+											DBMessage message = new DBMessage(RequestType.TPC_READ, "1", readQuery.getQuery(), "", tableNames);
+											if(temp == 4) {
+												dos.writeUTF(objMapper.writeValueAsString(message));
 
-									readOffset++;
-								}
+											}
+											System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
+											System.out.println("---------------------------");
+											Thread.sleep(1000);
+
+											readOffset++;
+											temp++;
+										}
+									}
+							
+								
 								if (readOffset==10)
 									readOffset=0;
 								if (!readQueryScanner.hasNext()) {
@@ -125,11 +135,11 @@ public class DBMessageSource {
 								
 								// adding consistency query
 								
-								String consistencyQuery = "Select SUM(totalprice) as consistencySum from orders;";
-								DBMessage message = new DBMessage(RequestType.CONSISTENCY_CHECK, "1", consistencyQuery, "");
-								dos.writeUTF(objMapper.writeValueAsString(message));
-								System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
-								
+//								String consistencyQuery = "Select SUM(totalprice) as consistencySum from orders;";
+//								DBMessage message = new DBMessage(RequestType.CONSISTENCY_CHECK, "1", consistencyQuery, "");
+//								dos.writeUTF(objMapper.writeValueAsString(message));
+//								System.out.println("Message sent from source to publisher: for consistency query"+ objMapper.writeValueAsString(message));
+//								
 								
 								
 //								if (updateQueryScanner.hasNextLine()){
@@ -152,8 +162,17 @@ public class DBMessageSource {
 		
 
 							}
+							
+								String consistencyQuery = "Select SUM(O_TOTALPRICE) as consistencySum from orders;";
+								DBMessage message = new DBMessage(RequestType.CONSISTENCY_CHECK, "1", consistencyQuery, "");
+								dos.writeUTF(objMapper.writeValueAsString(message));
+								System.out.println("Message sent from source to publisher: for consistency query"+ objMapper.writeValueAsString(message));
+								
+								Thread.sleep(10000);
+							
+				
 
-							readQueryScanner.close();
+							//readQueryScanner.close();
 							//updateQueryScanner.close();
 							//insertQueryScanner.close();
 						}

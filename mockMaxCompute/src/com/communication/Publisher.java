@@ -119,7 +119,7 @@ public class Publisher {
 				BufferedWriter writer = null;
 				while (true) {
 					System.out.println("size of stats when checked:"+ requestStats.size());
-					if (requestStats.size() > 10) {
+					if (requestStats.size() >= 1) {
 						List<RequestStat> temp = new ArrayList<RequestStat>();
 						temp.addAll(requestStats);
 						
@@ -241,7 +241,8 @@ public class Publisher {
 																// network
 
 						} else if (inputMessage.getReqType() == RequestType.READ) {
-
+							
+							//Socket readTargetNodeSocket = 
 							Socket readTargetNodeSocket = getNodeWithUpdatedState(inputMessage, inputMessage.getTableNames());
 							if ( readTargetNodeSocket!= null) {
 								DataOutputStream dos = new DataOutputStream(readTargetNodeSocket.getOutputStream());
@@ -250,6 +251,8 @@ public class Publisher {
 							}
 
 						} else if (inputMessage.getReqType() == RequestType.CONSISTENCY_CHECK) {
+							System.out.println("Recieving consistency query");
+							System.out.println("-------subscriberReplicamap size "+subscriberReplicaMap.size());
 							Set<String> nodeId = new HashSet();
 							for(Map.Entry<String, Set<String>> entry : subscriberReplicaMap.entrySet()) {
 								Set<String> tableSet = entry.getValue();
@@ -262,7 +265,17 @@ public class Publisher {
 							while(itr.hasNext()) {
 								String node = itr.next();
 								System.out.println("Node is ... consistency chck q...  "+node);
-								if(subscriberNodeSocketMap.contains(node)) {
+								StringBuffer sb = new StringBuffer(node);
+								//sb.deleteCharAt(0);
+								node = sb.toString();
+								node = node.replace("_", ":");
+								System.out.println("-----------New formatted node id is  "+node);
+								
+								System.out.println("printing subscriber node map size  "+subscriberNodeSocketMap.size());
+								subscriberNodeSocketMap.forEach((key, value) -> System.out.println("map record "+key + ":" + value));
+
+								if(subscriberNodeSocketMap.containsKey(node)) {
+									System.out.println("-----------inside the subscriber nodescoket map");
 									Socket nodeSocket = subscriberNodeSocketMap.get(node);
 									DataOutputStream dos = new DataOutputStream(nodeSocket.getOutputStream());
 									dos.writeUTF(objMapper.writeValueAsString(inputMessage));
@@ -305,6 +318,7 @@ public class Publisher {
 						DBMessage inputMessage = objMapper.readValue(received, DBMessage.class);
 						int numNodes = subscriberNodeSocketMap.size();
 						if(inputMessage.getReqType() == RequestType.REP_TABLES){
+							System.out.println("Request type REP TABLES recieved");
 							subscriberReplicaMap.put(inputMessage.getSenderId(),inputMessage.getReplicatedTables());
 						}
 						if (inputMessage.getReqType() == RequestType.ACK_INSERT
@@ -341,6 +355,7 @@ public class Publisher {
 							}
 						} else if (inputMessage.getReqType().equals(RequestType.READ_RESPONSE)) {
 							System.out.println("Read response received " + inputMessage.getRecord());
+							subscriberReplicaMap.put(inputMessage.getSenderId(),inputMessage.getReplicatedTables());
 							long endTime = new Date().getTime();
 							RequestStat reqStat = new RequestStat(inputMessage.getStartTime(), endTime,
 									inputMessage.getReqType().name(), true, 1, Nw, numNodes);
@@ -365,6 +380,8 @@ public class Publisher {
 
 							RequestStat reqStat = new RequestStat(inputMessage.getStartTime(), endTime,
 									inputMessage.getReqType().name(), true, numNodes, inConsistencyCount);
+							System.out.println("---------------------Inconsistency count object is "+reqStat.inConsistencyCount);
+							System.out.println("---------------------");
 							requestStats.add(reqStat);
 						}
 						
@@ -402,6 +419,7 @@ public class Publisher {
 		
 		float consistencyRatio = (float) valuesSet.size() / (float) consistencyMap.size();
 		consistencyMap.clear();
+		System.out.println("Inconsistency count is "+consistencyRatio);
 		return consistencyRatio;
 	}
 
