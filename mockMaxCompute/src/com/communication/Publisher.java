@@ -333,7 +333,7 @@ public class Publisher {
 
 								int nAcks = senderNodes != null ? senderNodes.size() : 0;
 								
-								boolean useMLModel = true;
+								boolean useMLModel = false;
 								
 								if(useMLModel) {
 									prevWriteEndTime = prevWriteEndTime!=0? prevWriteEndTime : inputMessage.getStartTime()+10;
