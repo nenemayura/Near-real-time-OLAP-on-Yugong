@@ -1,6 +1,7 @@
 package com.communication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mlModel.RegressionModel;
 import com.stateTable.StateTableOperationManager;
 
 import java.io.BufferedWriter;
@@ -52,8 +53,7 @@ public class Publisher {
 	public static volatile List<RequestStat> requestStats = new ArrayList<RequestStat>();
 	public static ConcurrentHashMap<String, Set<String>> subscriberReplicaMap = new ConcurrentHashMap<String, Set<String>>();
 	public static volatile ConcurrentHashMap<String, String> consistencyMap = new ConcurrentHashMap<String, String>();
-
-
+	public static volatile long prevWriteEndTime =0;
 	// method to publish notification whenever DB entry is created
 	public static void main(String args[]) {
 		if (args.length > 0) {
@@ -68,7 +68,10 @@ public class Publisher {
 			}
 			if (args[3] != null) {
 				messageSourcePort = Integer.valueOf(args[3]);
+			} if(args[4] != null) {
+				Nw = Integer.valueOf(args[4]);
 			}
+
 		}
 		listenSource();
 		acceptSubscriptions();
@@ -119,7 +122,7 @@ public class Publisher {
 				BufferedWriter writer = null;
 				while (true) {
 					System.out.println("size of stats when checked:"+ requestStats.size());
-					if (requestStats.size() > 10) {
+					if (requestStats.size() >= 1) {
 						List<RequestStat> temp = new ArrayList<RequestStat>();
 						temp.addAll(requestStats);
 						
@@ -250,6 +253,8 @@ public class Publisher {
 							}
 
 						} else if (inputMessage.getReqType() == RequestType.CONSISTENCY_CHECK) {
+							System.out.println("Recieving consistency query");
+							System.out.println("-------subscriberReplicamap size "+subscriberReplicaMap.size());
 							Set<String> nodeId = new HashSet();
 							for(Map.Entry<String, Set<String>> entry : subscriberReplicaMap.entrySet()) {
 								Set<String> tableSet = entry.getValue();
@@ -262,7 +267,17 @@ public class Publisher {
 							while(itr.hasNext()) {
 								String node = itr.next();
 								System.out.println("Node is ... consistency chck q...  "+node);
-								if(subscriberNodeSocketMap.contains(node)) {
+								StringBuffer sb = new StringBuffer(node);
+								//sb.deleteCharAt(0);
+								node = sb.toString();
+								node = node.replace("_", ":");
+								System.out.println("-----------New formatted node id is  "+node);
+								
+								System.out.println("printing subscriber node map size  "+subscriberNodeSocketMap.size());
+								subscriberNodeSocketMap.forEach((key, value) -> System.out.println("map record "+key + ":" + value));
+
+								if(subscriberNodeSocketMap.containsKey(node)) {
+									System.out.println("-----------inside the subscriber nodescoket map");
 									Socket nodeSocket = subscriberNodeSocketMap.get(node);
 									DataOutputStream dos = new DataOutputStream(nodeSocket.getOutputStream());
 									dos.writeUTF(objMapper.writeValueAsString(inputMessage));
@@ -293,11 +308,6 @@ public class Publisher {
 
 						while (dis.available() < 1) {
 							Thread.sleep(500);
-//							long endTime = new Date().getTime();
-//							RequestStat reqStat = new RequestStat(endTime-10, endTime,
-//									"READ", true, 1, Nw, 3);
-//							requestStats.add(reqStat);
-//							System.out.println("Size of stats after adding:"+ requestStats.size());
 						}
 						ObjectMapper objMapper = new ObjectMapper();
 						String received = dis.readUTF();
@@ -305,6 +315,7 @@ public class Publisher {
 						DBMessage inputMessage = objMapper.readValue(received, DBMessage.class);
 						int numNodes = subscriberNodeSocketMap.size();
 						if(inputMessage.getReqType() == RequestType.REP_TABLES){
+							System.out.println("Request type REP TABLES recieved");
 							subscriberReplicaMap.put(inputMessage.getSenderId(),inputMessage.getReplicatedTables());
 						}
 						if (inputMessage.getReqType() == RequestType.ACK_INSERT
@@ -320,7 +331,15 @@ public class Publisher {
 								Set<String> senderNodes = ackMap.get(requestKey);
 
 								int nAcks = senderNodes != null ? senderNodes.size() : 0;
-
+								
+								boolean useMLModel = true;
+								
+								if(useMLModel) {
+									prevWriteEndTime = prevWriteEndTime!=0? prevWriteEndTime : inputMessage.getStartTime()+10;
+									RequestStat callReq = new RequestStat(inputMessage.getStartTime(), prevWriteEndTime,
+											inputMessage.getReqType().name(), true, 1, Nw, numNodes);
+									Nw = RegressionModel.call(callReq);
+								}
 								if (nAcks >= Nw) {
 									System.out.println("nAcks:" + nAcks + " nAcksReqd:" + Nw);
 
@@ -335,12 +354,14 @@ public class Publisher {
 									populateStateTable(inputMessage.getTableName(), ackMap.get(requestKey));
 									updateDataBase(inputMessage.getTableName(), ackMap.get(requestKey));
 									flushKeyFromAckMap(requestKey);
+									prevWriteEndTime = endTime;
 
 									// TODO send response to user
 								}
 							}
 						} else if (inputMessage.getReqType().equals(RequestType.READ_RESPONSE)) {
 							System.out.println("Read response received " + inputMessage.getRecord());
+							subscriberReplicaMap.put(inputMessage.getSenderId(),inputMessage.getReplicatedTables());
 							long endTime = new Date().getTime();
 							RequestStat reqStat = new RequestStat(inputMessage.getStartTime(), endTime,
 									inputMessage.getReqType().name(), true, 1, Nw, numNodes);
@@ -365,6 +386,8 @@ public class Publisher {
 
 							RequestStat reqStat = new RequestStat(inputMessage.getStartTime(), endTime,
 									inputMessage.getReqType().name(), true, numNodes, inConsistencyCount);
+							System.out.println("---------------------Inconsistency count object is "+reqStat.inConsistencyCount);
+							System.out.println("---------------------");
 							requestStats.add(reqStat);
 						}
 						
@@ -402,6 +425,7 @@ public class Publisher {
 		
 		float consistencyRatio = (float) valuesSet.size() / (float) consistencyMap.size();
 		consistencyMap.clear();
+		System.out.println("Inconsistency count is "+consistencyRatio);
 		return consistencyRatio;
 	}
 
@@ -593,120 +617,3 @@ public class Publisher {
 	}
 
 }
-
-//public static Socket getNodeFromRepLogic(List<String> tableNames, String[] nodesIds) {
-//List<String> nodeIds = new ArrayList<String>();
-//
-//System.out.println("gettting node for record id " + recordId);
-//String nodeId = "";
-//if (stateTable.get(recordId) != null) { // if the record is present in state table return any node in the list
-//	nodeId = stateTable.get(recordId).iterator().next();
-//} else { // if record has not been updated at all
-//			// TODO implement logic to look up in local DB and other DCs
-////	Iterator<String, Set<TableNames>> it = subscriberReplicaMap.iterator();
-//	Set<TableNames> max = null;
-//	while(it.hasNext()){
-//		Entry<String, Set<TableNames>>entry = it.next();
-//		Set<TableNames> intersection = reqTables.retainAll(entry.getValue());
-//		if (max==null) {
-//			max = intersection;
-//			nodeId = entry.getKey();
-//		}
-//		else if (max.size() < intersection.size()) {
-//			max = entry.getValue();
-//			nodeId = entry.getKey();
-//		}
-//	}
-//	reqTables.removeAll(max);
-//	final Connection con = DatabaseConnection.getConnection();
-//	StateTableOperationManager stateTableHandler = new StateTableOperationManager(con);
-//	nodeId = stateTableHandler.readFromStateTable(recordId, "testtable");
-//	nodeId = "testNodeId";
-//	System.out.println("Node id received from the state table " + nodeId);
-//	StringBuffer sb = new StringBuffer(nodeId);
-//	sb.deleteCharAt(0);
-//	nodeId = sb.toString();
-//	nodeId = nodeId.replace("_", ":");
-//	System.out.println("new Node id received from the state table " + nodeId);
-//}
-//if (subscriberNodeSocketMap.containsKey(nodeId)) {
-//	System.out.println("Subscriber node map contains the " + nodeId);
-//	Socket readNodeSocket = subscriberNodeSocketMap.get(nodeId);
-//	return readNodeSocket;
-//}
-//
-//return null;
-//
-//return null;
-//
-//}
-//
-
-//public static Socket getNodeWithUpdatedState(List<String> tableName) {
-//System.out.println("gettting node for tableName " + tableName);
-//String nodeId = "";
-//if (stateTable.get(tableName) != null) { // if the record is present in state table return any node in the list
-//	nodeId = stateTable.get(tableName).iterator().next();
-//} else { // if record has not been updated at all
-//			// TODO implement logic to look up in local DB and other DCs
-//	final Connection con = DatabaseConnection.getConnection();
-//	StateTableOperationManager stateTableHandler = new StateTableOperationManager(con);
-//	nodeId = stateTableHandler.readFromStateTable(tableName, "testtable");
-//	nodeId = "testNodeId";
-//	System.out.println("Node id received from the state table " + nodeId);
-//	StringBuffer sb = new StringBuffer(nodeId);
-//	sb.deleteCharAt(0);
-//	nodeId = sb.toString();
-//	nodeId = nodeId.replace("_", ":");
-//	System.out.println("new Node id received from the state table " + nodeId);
-//}
-//if (subscriberNodeSocketMap.containsKey(nodeId)) {
-//	System.out.println("Subscriber node map contains the " + nodeId);
-//	Socket readNodeSocket = subscriberNodeSocketMap.get(nodeId);
-//	return readNodeSocket;
-//}
-//return null;
-//}
-
-//public static Socket getNodeWithUpdatedState(String recordId, Set<TableNames> reqTables) {
-//System.out.println("gettting node for record id " + recordId);
-//String nodeId = "";
-//if (stateTable.get(recordId) != null) { // if the record is present in state table return any node in the list
-//	nodeId = stateTable.get(recordId).iterator().next();
-//} else { // if record has not been updated at all
-//			// TODO implement logic to look up in local DB and other DCs
-//	Iterator<String, Set<TableNames>> it = subscriberReplicaMap.iterator();
-//	Set<TableNames> max = null;
-//	while(it.hasNext()){
-//		Entry<String, Set<TableNames>>entry = it.next();
-//		Set<TableNames> intersection = reqTables.retainAll(entry.getValue());
-//		if (max==null) {
-//			max = intersection;
-//			nodeId = entry.getKey();
-//		}
-//		else if (max.size() < intersection.size()) {
-//			max = entry.getValue();
-//			nodeId = entry.getKey();
-//		}
-//	}
-//	
-//	final Connection con = DatabaseConnection.getConnection();
-//	StateTableOperationManager stateTableHandler = new StateTableOperationManager(con);
-//	nodeId = stateTableHandler.readFromStateTable(recordId, "testtable");
-//	nodeId = "testNodeId";
-//	System.out.println("Node id received from the state table " + nodeId);
-//	StringBuffer sb = new StringBuffer(nodeId);
-//	sb.deleteCharAt(0);
-//	nodeId = sb.toString();
-//	nodeId = nodeId.replace("_", ":");
-//	System.out.println("new Node id received from the state table " + nodeId);
-//}
-//if (subscriberNodeSocketMap.containsKey(nodeId)) {
-//	System.out.println("Subscriber node map contains the " + nodeId);
-//	Socket readNodeSocket = subscriberNodeSocketMap.get(nodeId);
-//	return readNodeSocket;
-//}
-//
-//return null;
-//
-//}
