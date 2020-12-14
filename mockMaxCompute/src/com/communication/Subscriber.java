@@ -23,7 +23,11 @@ public class Subscriber {
 	public static Socket subToPubSocket;
     static String pubSvrIp = "localhost";
     static int port_listen_to = 5432;
+<<<<<<< HEAD
 
+=======
+   
+>>>>>>> 71f61ad4f847d5dae447d2c454919cca51c9cfbd
     public static Set<String> namesList = new HashSet<String>();
 	public static Set<String> allTablesInSub = new HashSet<String>();
 	
@@ -95,7 +99,12 @@ public class Subscriber {
 						System.out.println("msg received  "+messageReceived);
 						DBMessage response = new DBMessage();
 						response.setStartTime(messageReceived.getStartTime());
+<<<<<<< HEAD
 
+=======
+						response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
+						
+>>>>>>> 71f61ad4f847d5dae447d2c454919cca51c9cfbd
 						if(messageReceived.getReqType().equals(RequestType.TPC_READ)) {
 							result = dbOperationManager.processTpcRead(messageReceived.getRecord());
 							System.out.println("The result receivd is "+result);
@@ -104,13 +113,16 @@ public class Subscriber {
 							allTablesInSub = new HashSet<String>(replicatedTables);
 							allTablesInSub.addAll((namesList));
 							response.setReplicatedTables(allTablesInSub);
+<<<<<<< HEAD
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
+=======
+							
+>>>>>>> 71f61ad4f847d5dae447d2c454919cca51c9cfbd
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
 							System.out.println("Wrote response  to publisher  "+result);
 						} else if(messageReceived.getReqType().equals(RequestType.INSERT) ) {
 							response.setReqType(RequestType.ACK_INSERT);
 							response.setRecordId(messageReceived.getRecordId());
-							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
 							System.out.println("Wrote ack insert to publisher  ");
 						} else if (messageReceived.getReqType().equals(RequestType.EDIT)) {
@@ -118,14 +130,18 @@ public class Subscriber {
 							result = dbOperationManager.processUpdate(messageReceived.getRecord());
 							response.setReqType(RequestType.ACK_EDIT);
 							response.setRecordId(messageReceived.getRecordId());
-							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
 							System.out.println("Wrote ack insert to publisher  ");}
 							else
+<<<<<<< HEAD
 								System.out.println("Orders table not present in "+ subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort())
+=======
+								System.out.println("Orders table not present in "+ subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
+>>>>>>> 71f61ad4f847d5dae447d2c454919cca51c9cfbd
 						} else if (messageReceived.getReqType().equals(RequestType.READ)) {
 							response.setReqType(RequestType.READ_RESPONSE);
 							response.setRecord(result);
+							
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
 							System.out.println("Wrote response  to publisher  "+result);
@@ -136,10 +152,12 @@ public class Subscriber {
 							ReplicationManager replicationManager = new ReplicationManager();
 							while(itr.hasNext()){
 								Map.Entry<String, String> entry = itr.next();
-								Connection rc = replicationManager.getRemoteDatabaseConnection(entry.getValue());
-								ResultSet rs = replicationManager.selectDataFromRemote(rc,entry.getKey());
-								replicationManager.replicateDataFromRemote(rs,entry.getKey());
-								replicatedTables.add(entry.getKey());
+								if (!allTablesInSub.contains(entry.getKey())) {
+									Connection rc = replicationManager.getRemoteDatabaseConnection(entry.getValue());
+									ResultSet rs = replicationManager.selectDataFromRemote(rc, entry.getKey());
+									replicationManager.replicateDataFromRemote(rs, entry.getKey());
+									replicatedTables.add(entry.getKey());
+								}
 							}
 
 
@@ -167,14 +185,6 @@ public class Subscriber {
 							System.out.println("Wrote response  to publisher  "+result);
 						}
 						Thread.sleep(10000);
-						//TODO read from table in DB
-//						DBMessage response = messageReceived;
-//						if(response!= null) {
-//							response.setReqType(RequestType.ACK_INSERT);
-//							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
-//							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
-//							System.out.println("Wrote ack insert to publisher  ");
-//						}
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
