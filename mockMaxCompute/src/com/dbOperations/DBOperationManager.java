@@ -1,6 +1,7 @@
 package com.dbOperations;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -207,4 +208,18 @@ public class DBOperationManager {
 			return result;
 		}
 
+		public List<String> getOwnTables() {
+			List<String> tableNamesList = new ArrayList<> ();
+			ResultSet rs;
+			try {
+				DatabaseMetaData md = localDbConnection.getMetaData();
+				rs = md.getTables(null, null, "%", null);
+				while (rs.next()) {
+					tableNamesList.add(rs.getString(3));
+					}
+			} catch (SQLException e) {
+				System.out.println("Exception while gtting tables "+e);
+			}
+			return tableNamesList;
+		}
 }
