@@ -25,6 +25,7 @@ public class Subscriber {
    
 	
 	public static void main(String args[]) {
+		//namesList = list of tables already present
 		List<String> namesList = Arrays.asList( "customer", "lineitem", "nation","orders","part","partsupp","region","supplier");
 		replicatedTables.addAll(namesList);
 		if(args.length >0 ) {
@@ -136,7 +137,8 @@ public class Subscriber {
 							result = dbOperationManager.processTpcRead(messageReceived.getRecord());
 							System.out.println("The result receivd is "+result);
 							response.setReqType(RequestType.REP_TABLES);
-							response.setReplicatedTables(new HashSet<String>(replicatedTables));
+							new Set<String> allTablesInSub = new HashSet<String>(replicatedTables).addAll(new HashSet<String>(namesList));
+							response.setReplicatedTables(allTablesInSub);
 							response.setRecord(result);
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
