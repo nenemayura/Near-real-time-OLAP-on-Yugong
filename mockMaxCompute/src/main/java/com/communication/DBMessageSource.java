@@ -143,11 +143,16 @@ public class DBMessageSource {
 //								
 								
 								
-//								if (updateQueryScanner.hasNextLine()){
-//									Query updateQuery = new Query(RequestType.EDIT,updateQueryScanner.nextLine(),TableName.customer);
-//									System.out.println(updateQuery.getQuery());
-//									Thread.sleep(10000);
-//								}
+								if (updateQueryScanner.hasNextLine()){
+									Query updateQuery = new Query(RequestType.EDIT,updateQueryScanner.nextLine(),TableName.customer);
+									String queryString  = updateQuery.getQuery();
+									if(!queryString.equals("\n;")) {
+//										Set<String> tableNames = getTableNames(queryString);
+										
+										DBMessage message = new DBMessage(RequestType.EDIT, "1", queryString);
+										System.out.println("Message sent from source to publisher:"+ objMapper.writeValueAsString(message));
+										System.out.println("---------------------------");
+								}
 //								else
 //									break;
 //								if (insertQueryScanner.hasNextLine()){
@@ -173,9 +178,9 @@ public class DBMessageSource {
 							
 				
 
-							//readQueryScanner.close();
-							//updateQueryScanner.close();
-							//insertQueryScanner.close();
+							readQueryScanner.close();
+							updateQueryScanner.close();
+							insertQueryScanner.close();
 						}
 						catch (FileNotFoundException e) {
 							System.out.println("An error occurred.");

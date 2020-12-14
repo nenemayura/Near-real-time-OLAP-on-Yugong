@@ -187,6 +187,22 @@ public class DBOperationManager {
 			
 			return result.toString();
 		}
+	public String processUpdate(String query) {
+		Statement stmt;
+
+		int rs = -1;
+		System.out.println("Executing update "+query);
+		try {
+			stmt = localDbConnection.createStatement();
+			rs = stmt.executeUpdate(query);
+
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return Integer.toString(rs);
+	}
 
 		public String processConsistencyQuery(String query) {
 			String result = "";

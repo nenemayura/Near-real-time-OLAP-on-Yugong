@@ -24,9 +24,8 @@
   <component name="ChangeListManager">
     <list default="true" id="bb1b4e30-9db1-4bfc-92a9-92cb7441ed34" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/communication/Publisher.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/communication/Publisher.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/communication/Subscriber.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/communication/Subscriber.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/replication/ReplicationManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/replication/ReplicationManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/dbOperations/DBOperationManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/dbOperations/DBOperationManager.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/communication/DBMessageSource.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/communication/DBMessageSource.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

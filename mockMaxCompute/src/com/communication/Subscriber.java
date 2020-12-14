@@ -25,7 +25,7 @@ public class Subscriber {
     static int port_listen_to = 5432;
 
     public static Set<String> namesList = new HashSet<String>();
-
+	public static Set<String> allTablesInSub = new HashSet<String>();
 	
 	public static void main(String args[]) {
 		DBOperationManager dbOperationManager = new DBOperationManager();
@@ -101,7 +101,7 @@ public class Subscriber {
 							System.out.println("The result receivd is "+result);
 							response.setReqType(RequestType.READ_RESPONSE);
 							response.setRecord(result);
-							Set<String> allTablesInSub = new HashSet<String>(replicatedTables);
+							allTablesInSub = new HashSet<String>(replicatedTables);
 							allTablesInSub.addAll((namesList));
 							response.setReplicatedTables(allTablesInSub);
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
@@ -114,11 +114,15 @@ public class Subscriber {
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
 							System.out.println("Wrote ack insert to publisher  ");
 						} else if (messageReceived.getReqType().equals(RequestType.EDIT)) {
+							if (allTablesInSub.contains("orders")){
+							result = dbOperationManager.processUpdate(messageReceived.getRecord());
 							response.setReqType(RequestType.ACK_EDIT);
 							response.setRecordId(messageReceived.getRecordId());
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
-							System.out.println("Wrote ack insert to publisher  ");
+							System.out.println("Wrote ack insert to publisher  ");}
+							else
+								System.out.println("Orders table not present in "+ subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort())
 						} else if (messageReceived.getReqType().equals(RequestType.READ)) {
 							response.setReqType(RequestType.READ_RESPONSE);
 							response.setRecord(result);
@@ -142,7 +146,7 @@ public class Subscriber {
 							result = dbOperationManager.processTpcRead(messageReceived.getRecord());
 							System.out.println("The result receivd is "+result);
 							response.setReqType(RequestType.REP_TABLES);
-							Set<String> allTablesInSub = new HashSet<String>(replicatedTables);
+							allTablesInSub = new HashSet<String>(replicatedTables);
 							allTablesInSub.addAll((namesList));
 							response.setReplicatedTables(allTablesInSub);
 							response.setRecord(result);
@@ -155,7 +159,8 @@ public class Subscriber {
 							response.setReqType(RequestType.ACK_CONSISTENCY_CHECK);
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							response.setConsistencyNodes(messageReceived.getConsistencyNodes());
-							Set<String> allTablesInSub = new HashSet<String>(replicatedTables);
+
+							allTablesInSub  = new HashSet<String>(replicatedTables);
 							allTablesInSub.addAll((namesList));
 							response.setReplicatedTables(allTablesInSub);
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
