@@ -23,14 +23,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bb1b4e30-9db1-4bfc-92a9-92cb7441ed34" name="Default Changelist" comment="">
-<<<<<<< HEAD
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/communication/Publisher.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/communication/Publisher.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/communication/Subscriber.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/communication/Subscriber.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/replication/ReplicationManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/replication/ReplicationManager.java" afterDir="false" />
-=======
-      <change beforePath="$PROJECT_DIR$/src/com/communication/Publisher.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/communication/Publisher.java" afterDir="false" />
->>>>>>> replication-logic
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/communication/DBMessageSource.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/communication/DBMessageSource.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,6 +60,9 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/.." />
+    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.proportion" value="0.15" />
+    <property name="project.structure.side.proportion" value="0.2" />
   </component>
   <component name="RunManager">
     <configuration name="DBMessageSource" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
@@ -102,10 +102,14 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="96" y="0" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1607562535303">
+    <state x="121" y="0" key="#Project_Structure" timestamp="1607909251153">
       <screen x="0" y="0" width="1280" height="680" />
     </state>
-    <state x="96" y="0" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1280.680@0.0.1280.680" timestamp="1607562535303" />
+    <state x="121" y="0" key="#Project_Structure/0.0.1280.680@0.0.1280.680" timestamp="1607909251153" />
+    <state x="96" y="0" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1607909224697">
+      <screen x="0" y="0" width="1280" height="680" />
+    </state>
+    <state x="96" y="0" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1280.680@0.0.1280.680" timestamp="1607909224697" />
     <state x="446" y="25" key="#com.intellij.ide.util.MemberChooser" timestamp="1607823215242">
       <screen x="0" y="0" width="1280" height="680" />
     </state>
@@ -146,5 +150,16 @@
       <screen x="0" y="0" width="1280" height="680" />
     </state>
     <state x="297" y="153" key="run.anything.popup/0.0.1280.680@0.0.1280.680" timestamp="1607584009720" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/com/communication/DBMessage.java</url>
+          <line>34</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

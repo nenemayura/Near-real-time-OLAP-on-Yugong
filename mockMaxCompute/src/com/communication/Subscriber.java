@@ -22,7 +22,7 @@ public class Subscriber {
 	public static Socket subToPubSocket;
     static String pubSvrIp = "localhost";
     static int port_listen_to = 5432;
-    public static namesList = new HashSet<String>()
+    public static Set<String> namesList = new HashSet<String>()
    
 	
 	public static void main(String args[]) {
