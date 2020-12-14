@@ -25,9 +25,9 @@ public class Subscriber {
    
 	
 	public static void main(String args[]) {
+		DBOperationManager dbOperationManager = new DBOperationManager();
 		//namesList = list of tables already present
-		List<String> namesList = Arrays.asList( "customer", "lineitem", "nation","orders","part","partsupp","region","supplier");
-		replicatedTables.addAll(namesList);
+		Set<String> namesList = new HashSet<String>(dbOperationManager.getOwnTables());
 		if(args.length >0 ) {
 			if(args[0]!= null) {
 				pubSvrIp = args[0];
@@ -149,6 +149,7 @@ public class Subscriber {
 							response.setReqType(RequestType.ACK_CONSISTENCY_CHECK);
 							response.setSenderId(subToPubSocket.getLocalAddress()+"_"+ subToPubSocket.getLocalPort());
 							response.setConsistencyNodes(messageReceived.getConsistencyNodes());
+							Set<String> allTablesInSub = new HashSet<String>(replicatedTables).addAll(namesList);
 							response.setReplicatedTables(new HashSet<String>(replicatedTables));
 							dosSubToPub.writeUTF(objMapper.writeValueAsString(response));
 							System.out.println("Wrote response  to publisher  "+result);
