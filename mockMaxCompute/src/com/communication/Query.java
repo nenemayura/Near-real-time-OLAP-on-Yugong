@@ -1,5 +1,9 @@
 package com.communication;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class Query {
     private RequestType reqType;
     private String message;
@@ -30,10 +34,19 @@ public class Query {
     }
 
     public String convertToQuery(RequestType reqType, String values, TableName tableName){
-        String query=null;
+        String query="";
+        query = "UPDATE orders SET ";
         if (reqType == RequestType.EDIT){
-            String[] sepValues = values.split("|");
-            query = "UPDATE ";
+            List<String> cols = Arrays.asList("O_ORDERKEY", "O_CUSTKEY", "O_ORDERSTATUS", "O_TOTALPRICE","O_ORDERDATE","O_ORDERPRIORITY","O_CLERK","O_SHIPPRIORITY","O_COMMENT");
+            String[] sepVals = values.split("|");
+            for (int i=0;i<cols.size();i++){
+                if (i>0)
+                    query = query+ ", "+ cols.get(i) + " = "+ sepVals[i];
+                else
+                    query = query+ cols.get(i) + " = "+ sepVals[i];
+
+            }
+
         }
         else if (reqType == RequestType.INSERT){
             String commaSepValues = values.replace("|",", ");
